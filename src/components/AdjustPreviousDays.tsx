@@ -417,6 +417,7 @@ const AdjustPreviousDays: React.FC<AdjustPreviousDaysProps> = ({ onBack }) => {
       reason: '',
       locationName: ''
     });
+    setShiftSchedule(null);
   };
 
   const handleSubmitEdit = async () => {
