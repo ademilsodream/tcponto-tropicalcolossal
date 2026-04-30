@@ -131,7 +131,7 @@ function App() {
             </div>
           </Router>
           <Toaster />
-          <DebugPanel />
+          
         </OptimizedAuthProvider>
       </CurrencyProvider>
     </UltraOptimizedQueryProvider>
