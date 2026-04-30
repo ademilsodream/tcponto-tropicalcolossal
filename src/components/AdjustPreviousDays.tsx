@@ -109,6 +109,12 @@ const AdjustPreviousDays: React.FC<AdjustPreviousDaysProps> = ({ onBack }) => {
   const [editedDates, setEditedDates] = useState<Set<string>>(new Set());
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [shiftSchedule, setShiftSchedule] = useState<{
+    start_time: string | null;
+    break_start_time: string | null;
+    break_end_time: string | null;
+    end_time: string | null;
+  } | null>(null);
 
   const { user, profile } = useOptimizedAuth();
   const { toast } = useToast();
