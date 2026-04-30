@@ -260,6 +260,45 @@ const AdjustPreviousDays: React.FC<AdjustPreviousDaysProps> = ({ onBack }) => {
     }
   };
 
+  const loadShiftScheduleForDate = async (date: Date) => {
+    try {
+      const shiftId = (profile as any)?.shift_id;
+      if (!shiftId) {
+        setShiftSchedule(null);
+        return;
+      }
+      const dayOfWeek = date.getDay();
+      const { data, error } = await supabase
+        .from('work_shift_schedules')
+        .select('start_time, end_time, break_start_time, break_end_time')
+        .eq('shift_id', shiftId)
+        .eq('day_of_week', dayOfWeek)
+        .eq('is_active', true)
+        .maybeSingle();
+      if (error) throw error;
+      setShiftSchedule(data || null);
+    } catch (err) {
+      console.error('Erro ao carregar schedule do turno:', err);
+      setShiftSchedule(null);
+    }
+  };
+
+  const handleFillFromShift = () => {
+    if (!shiftSchedule) return;
+    const trim = (t: string | null) => (t ? t.substring(0, 5) : '');
+    setEditForm(prev => ({
+      ...prev,
+      clock_in: trim(shiftSchedule.start_time),
+      lunch_start: trim(shiftSchedule.break_start_time),
+      lunch_end: trim(shiftSchedule.break_end_time),
+      clock_out: trim(shiftSchedule.end_time),
+    }));
+    toast({
+      title: 'Horários preenchidos',
+      description: 'Os horários do turno foram aplicados. Você ainda pode ajustá-los manualmente.',
+    });
+  };
+
   const handleDateSelect = (date: Date | undefined) => {
     if (!date) return;
     
