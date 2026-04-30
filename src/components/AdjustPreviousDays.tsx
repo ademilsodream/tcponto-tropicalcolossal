@@ -245,6 +245,9 @@ const AdjustPreviousDays: React.FC<AdjustPreviousDaysProps> = ({ onBack }) => {
         });
       }
       
+      // Carregar schedule do turno para o dia da semana selecionado
+      await loadShiftScheduleForDate(date);
+
       // Abrir modal após carregar os dados
       setIsModalOpen(true);
     } catch (error) {
