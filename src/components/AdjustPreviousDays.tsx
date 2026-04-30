@@ -726,6 +726,24 @@ const AdjustPreviousDays: React.FC<AdjustPreviousDaysProps> = ({ onBack }) => {
                 )}
               </div>
 
+              <div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={handleFillFromShift}
+                  disabled={!shiftSchedule || submitting}
+                  className="w-full h-11"
+                >
+                  <Clock className="w-4 h-4 mr-2" />
+                  Preencher com horário do turno
+                </Button>
+                {!shiftSchedule && (
+                  <p className="text-xs text-gray-500 mt-1 text-center">
+                    Sem turno configurado para este dia da semana
+                  </p>
+                )}
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="clock_in" className="text-base font-medium">Entrada</Label>
