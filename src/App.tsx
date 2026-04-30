@@ -10,7 +10,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import EmployeeLayout from '@/components/EmployeeLayout';
 import UnifiedTimeRecordPage from '@/pages/UnifiedTimeRecordPage';
 import PrivacyPolicy from '@/pages/PrivacyPolicy';
-import DebugPanel from '@/components/DebugPanel';
+
 
 // Páginas/Componentes reais
 import EmployeeMonthlySummary from '@/components/EmployeeMonthlySummary';
@@ -131,7 +131,7 @@ function App() {
             </div>
           </Router>
           <Toaster />
-          <DebugPanel />
+          
         </OptimizedAuthProvider>
       </CurrencyProvider>
     </UltraOptimizedQueryProvider>
