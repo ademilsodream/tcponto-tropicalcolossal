@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "12.2.3 (519615d)"
+    PostgrestVersion: "14.1"
   }
   public: {
     Tables: {
@@ -54,17 +54,88 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "allowances_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_in_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "allowances_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_out_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "allowances_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_end_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "allowances_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_start_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "allowances_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_pontos_faltantes_semana"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "allowances_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "allowances_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_in_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "allowances_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_out_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "allowances_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_end_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "allowances_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_start_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "allowances_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_pontos_faltantes_semana"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       allowed_locations: {
         Row: {
           address: string
+          code: string | null
           created_at: string
           id: string
           is_active: boolean
@@ -76,6 +147,7 @@ export type Database = {
         }
         Insert: {
           address: string
+          code?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
@@ -87,6 +159,7 @@ export type Database = {
         }
         Update: {
           address?: string
+          code?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
@@ -97,6 +170,88 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      anexos_despesa: {
+        Row: {
+          caminho_arquivo: string
+          created_at: string
+          despesa_id: string
+          id: string
+          nome_arquivo: string
+          tamanho_arquivo: number
+          tipo_arquivo: string
+          updated_at: string
+        }
+        Insert: {
+          caminho_arquivo: string
+          created_at?: string
+          despesa_id: string
+          id?: string
+          nome_arquivo: string
+          tamanho_arquivo: number
+          tipo_arquivo: string
+          updated_at?: string
+        }
+        Update: {
+          caminho_arquivo?: string
+          created_at?: string
+          despesa_id?: string
+          id?: string
+          nome_arquivo?: string
+          tamanho_arquivo?: number
+          tipo_arquivo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anexos_despesa_despesa_id_fkey"
+            columns: ["despesa_id"]
+            isOneToOne: false
+            referencedRelation: "despesas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      anexos_fatura_receita: {
+        Row: {
+          caminho_arquivo: string
+          created_at: string
+          fatura_id: string
+          id: string
+          nome_arquivo: string
+          tamanho_arquivo: number
+          tipo_arquivo: string
+          updated_at: string
+        }
+        Insert: {
+          caminho_arquivo: string
+          created_at?: string
+          fatura_id: string
+          id?: string
+          nome_arquivo: string
+          tamanho_arquivo: number
+          tipo_arquivo: string
+          updated_at?: string
+        }
+        Update: {
+          caminho_arquivo?: string
+          created_at?: string
+          fatura_id?: string
+          id?: string
+          nome_arquivo?: string
+          tamanho_arquivo?: number
+          tipo_arquivo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anexos_fatura_receita_fatura_id_fkey"
+            columns: ["fatura_id"]
+            isOneToOne: false
+            referencedRelation: "faturas_receita"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       announcement_recipients: {
         Row: {
@@ -137,6 +292,41 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "announcement_recipients_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_in_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "announcement_recipients_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_out_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "announcement_recipients_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_end_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "announcement_recipients_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_start_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "announcement_recipients_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_pontos_faltantes_semana"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -182,7 +372,66 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "announcements_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_in_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "announcements_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_out_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "announcements_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_end_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "announcements_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_start_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "announcements_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_pontos_faltantes_semana"
+            referencedColumns: ["user_id"]
+          },
         ]
+      }
+      app_settings: {
+        Row: {
+          description: string | null
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: string
+        }
+        Insert: {
+          description?: string | null
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value: string
+        }
+        Update: {
+          description?: string | null
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: string
+        }
+        Relationships: []
       }
       audit_logs: {
         Row: {
@@ -313,6 +562,173 @@ export type Database = {
         }
         Relationships: []
       }
+      catalogo_itens_orcamento: {
+        Row: {
+          ativo: boolean | null
+          categoria: string | null
+          codigo: string | null
+          created_at: string | null
+          descricao: string | null
+          id: string
+          nome: string
+          tipo: string
+          unidade: string | null
+          updated_at: string | null
+          valor_referencia: number | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          categoria?: string | null
+          codigo?: string | null
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          nome: string
+          tipo: string
+          unidade?: string | null
+          updated_at?: string | null
+          valor_referencia?: number | null
+        }
+        Update: {
+          ativo?: boolean | null
+          categoria?: string | null
+          codigo?: string | null
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          nome?: string
+          tipo?: string
+          unidade?: string | null
+          updated_at?: string | null
+          valor_referencia?: number | null
+        }
+        Relationships: []
+      }
+      catalogo_subtopicos: {
+        Row: {
+          created_at: string | null
+          descricao: string
+          id: string
+          topico_id: string
+          unidade: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          descricao: string
+          id?: string
+          topico_id: string
+          unidade: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          descricao?: string
+          id?: string
+          topico_id?: string
+          unidade?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalogo_subtopicos_topico_id_fkey"
+            columns: ["topico_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_topicos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      catalogo_topicos: {
+        Row: {
+          created_at: string | null
+          descricao: string | null
+          id: string
+          nome: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          nome: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          nome?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      categorias: {
+        Row: {
+          ativo: boolean | null
+          cor: string | null
+          created_at: string | null
+          id: string
+          nome: string
+          updated_at: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          cor?: string | null
+          created_at?: string | null
+          id?: string
+          nome: string
+          updated_at?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          cor?: string | null
+          created_at?: string | null
+          id?: string
+          nome?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      clientes: {
+        Row: {
+          created_at: string
+          email: string | null
+          empresa: string | null
+          endereco: string | null
+          id: string
+          nif: string | null
+          nome: string
+          observacoes: string | null
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          empresa?: string | null
+          endereco?: string | null
+          id?: string
+          nif?: string | null
+          nome: string
+          observacoes?: string | null
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          empresa?: string | null
+          endereco?: string | null
+          id?: string
+          nif?: string | null
+          nome?: string
+          observacoes?: string | null
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       departments: {
         Row: {
           created_at: string
@@ -339,6 +755,178 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      despesas: {
+        Row: {
+          arquivo_anexo: string | null
+          atcud: string | null
+          base_tributavel: number | null
+          categoria_id: string | null
+          created_at: string
+          data_emissao: string | null
+          fornecedor_id: string | null
+          id: string
+          iva: number | null
+          nota_credito_vinculada_id: string | null
+          numero_fatura: string | null
+          obra_id: string | null
+          status: Database["public"]["Enums"]["despesa_status"]
+          tem_fatura: boolean | null
+          tipo_fatura: string | null
+          updated_at: string
+          valor_fatura: number | null
+        }
+        Insert: {
+          arquivo_anexo?: string | null
+          atcud?: string | null
+          base_tributavel?: number | null
+          categoria_id?: string | null
+          created_at?: string
+          data_emissao?: string | null
+          fornecedor_id?: string | null
+          id?: string
+          iva?: number | null
+          nota_credito_vinculada_id?: string | null
+          numero_fatura?: string | null
+          obra_id?: string | null
+          status?: Database["public"]["Enums"]["despesa_status"]
+          tem_fatura?: boolean | null
+          tipo_fatura?: string | null
+          updated_at?: string
+          valor_fatura?: number | null
+        }
+        Update: {
+          arquivo_anexo?: string | null
+          atcud?: string | null
+          base_tributavel?: number | null
+          categoria_id?: string | null
+          created_at?: string
+          data_emissao?: string | null
+          fornecedor_id?: string | null
+          id?: string
+          iva?: number | null
+          nota_credito_vinculada_id?: string | null
+          numero_fatura?: string | null
+          obra_id?: string | null
+          status?: Database["public"]["Enums"]["despesa_status"]
+          tem_fatura?: boolean | null
+          tipo_fatura?: string | null
+          updated_at?: string
+          valor_fatura?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "despesas_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "categorias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "despesas_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "despesas_nota_credito_vinculada_id_fkey"
+            columns: ["nota_credito_vinculada_id"]
+            isOneToOne: false
+            referencedRelation: "despesas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "despesas_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      despesas_divisao: {
+        Row: {
+          created_at: string
+          despesa_id: string
+          id: string
+          obra_id: string
+          valor: number
+        }
+        Insert: {
+          created_at?: string
+          despesa_id: string
+          id?: string
+          obra_id: string
+          valor: number
+        }
+        Update: {
+          created_at?: string
+          despesa_id?: string
+          id?: string
+          obra_id?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "despesas_divisao_despesa_id_fkey"
+            columns: ["despesa_id"]
+            isOneToOne: false
+            referencedRelation: "despesas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "despesas_divisao_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      despesas_mao_obra: {
+        Row: {
+          created_at: string
+          data_pagamento: string
+          funcao: string
+          funcionario_id_tcrh: string
+          funcionario_nome: string
+          id: string
+          obra_id: string
+          updated_at: string
+          valor_pago: number
+        }
+        Insert: {
+          created_at?: string
+          data_pagamento?: string
+          funcao: string
+          funcionario_id_tcrh: string
+          funcionario_nome: string
+          id?: string
+          obra_id: string
+          updated_at?: string
+          valor_pago: number
+        }
+        Update: {
+          created_at?: string
+          data_pagamento?: string
+          funcao?: string
+          funcionario_id_tcrh?: string
+          funcionario_nome?: string
+          id?: string
+          obra_id?: string
+          updated_at?: string
+          valor_pago?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "despesas_mao_obra_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       edit_requests: {
         Row: {
@@ -398,11 +986,81 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "edit_requests_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_in_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "edit_requests_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_out_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "edit_requests_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_end_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "edit_requests_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_start_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "edit_requests_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_pontos_faltantes_semana"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "edit_requests_reviewed_by_fkey"
             columns: ["reviewed_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "edit_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_in_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "edit_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_out_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "edit_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_end_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "edit_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_start_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "edit_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "vw_pontos_faltantes_semana"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -541,6 +1199,41 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "employee_document_types_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_in_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_document_types_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_out_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_document_types_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_end_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_document_types_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_start_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_document_types_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_pontos_faltantes_semana"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       employee_documents: {
@@ -601,11 +1294,81 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "employee_documents_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_in_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_documents_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_out_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_documents_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_end_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_documents_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_start_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_documents_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_pontos_faltantes_semana"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "employee_documents_uploaded_by_fkey"
             columns: ["uploaded_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_in_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_out_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_end_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_start_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "vw_pontos_faltantes_semana"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -649,10 +1412,161 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "employee_work_schedules_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_in_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_work_schedules_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_out_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_work_schedules_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_end_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_work_schedules_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_start_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_work_schedules_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_pontos_faltantes_semana"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "employee_work_schedules_shift_id_fkey"
             columns: ["shift_id"]
             isOneToOne: false
             referencedRelation: "work_shifts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      faturas_receita: {
+        Row: {
+          cliente_id: string | null
+          created_at: string
+          data_emissao: string
+          data_vencimento: string
+          descricao: string | null
+          id: string
+          numero_fatura: string
+          obra_id: string | null
+          observacoes: string | null
+          saldo_devedor: number | null
+          status: Database["public"]["Enums"]["fatura_status"]
+          updated_at: string
+          valor_pago: number
+          valor_total: number
+        }
+        Insert: {
+          cliente_id?: string | null
+          created_at?: string
+          data_emissao?: string
+          data_vencimento: string
+          descricao?: string | null
+          id?: string
+          numero_fatura: string
+          obra_id?: string | null
+          observacoes?: string | null
+          saldo_devedor?: number | null
+          status?: Database["public"]["Enums"]["fatura_status"]
+          updated_at?: string
+          valor_pago?: number
+          valor_total: number
+        }
+        Update: {
+          cliente_id?: string | null
+          created_at?: string
+          data_emissao?: string
+          data_vencimento?: string
+          descricao?: string | null
+          id?: string
+          numero_fatura?: string
+          obra_id?: string | null
+          observacoes?: string | null
+          saldo_devedor?: number | null
+          status?: Database["public"]["Enums"]["fatura_status"]
+          updated_at?: string
+          valor_pago?: number
+          valor_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "faturas_receita_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "faturas_receita_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fornecedores: {
+        Row: {
+          categoria: string | null
+          categoria_id: string | null
+          created_at: string
+          email: string | null
+          endereco: string | null
+          id: string
+          nif: string | null
+          nome: string
+          status: Database["public"]["Enums"]["fornecedor_status"]
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          categoria?: string | null
+          categoria_id?: string | null
+          created_at?: string
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          nif?: string | null
+          nome: string
+          status?: Database["public"]["Enums"]["fornecedor_status"]
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          categoria?: string | null
+          categoria_id?: string | null
+          created_at?: string
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          nif?: string | null
+          nome?: string
+          status?: Database["public"]["Enums"]["fornecedor_status"]
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fornecedores_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "categorias"
             referencedColumns: ["id"]
           },
         ]
@@ -686,6 +1600,41 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hour_bank_balances_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: true
+            referencedRelation: "vw_falta_clock_in_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "hour_bank_balances_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: true
+            referencedRelation: "vw_falta_clock_out_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "hour_bank_balances_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: true
+            referencedRelation: "vw_falta_lunch_end_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "hour_bank_balances_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: true
+            referencedRelation: "vw_falta_lunch_start_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "hour_bank_balances_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: true
+            referencedRelation: "vw_pontos_faltantes_semana"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -741,11 +1690,81 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "hour_bank_transactions_admin_user_id_fkey"
+            columns: ["admin_user_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_in_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "hour_bank_transactions_admin_user_id_fkey"
+            columns: ["admin_user_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_out_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "hour_bank_transactions_admin_user_id_fkey"
+            columns: ["admin_user_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_end_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "hour_bank_transactions_admin_user_id_fkey"
+            columns: ["admin_user_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_start_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "hour_bank_transactions_admin_user_id_fkey"
+            columns: ["admin_user_id"]
+            isOneToOne: false
+            referencedRelation: "vw_pontos_faltantes_semana"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "hour_bank_transactions_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hour_bank_transactions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_in_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "hour_bank_transactions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_out_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "hour_bank_transactions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_end_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "hour_bank_transactions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_start_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "hour_bank_transactions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_pontos_faltantes_semana"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "hour_bank_transactions_time_record_id_fkey"
@@ -816,6 +1835,63 @@ export type Database = {
         }
         Relationships: []
       }
+      insumos: {
+        Row: {
+          ativo: boolean | null
+          categoria_id: string | null
+          codigo: string | null
+          created_at: string
+          descricao: string | null
+          fornecedor_preferencial_id: string | null
+          id: string
+          nome: string
+          preco_unitario_referencia: number | null
+          unidade_medida: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean | null
+          categoria_id?: string | null
+          codigo?: string | null
+          created_at?: string
+          descricao?: string | null
+          fornecedor_preferencial_id?: string | null
+          id?: string
+          nome: string
+          preco_unitario_referencia?: number | null
+          unidade_medida?: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean | null
+          categoria_id?: string | null
+          codigo?: string | null
+          created_at?: string
+          descricao?: string | null
+          fornecedor_preferencial_id?: string | null
+          id?: string
+          nome?: string
+          preco_unitario_referencia?: number | null
+          unidade_medida?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insumos_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "categorias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insumos_fornecedor_preferencial_id_fkey"
+            columns: ["fornecedor_preferencial_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_functions: {
         Row: {
           created_at: string
@@ -874,11 +1950,81 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "location_employee_restrictions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_in_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "location_employee_restrictions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_out_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "location_employee_restrictions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_end_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "location_employee_restrictions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_start_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "location_employee_restrictions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_pontos_faltantes_semana"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "location_employee_restrictions_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "location_employee_restrictions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_in_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "location_employee_restrictions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_out_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "location_employee_restrictions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_end_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "location_employee_restrictions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_start_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "location_employee_restrictions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_pontos_faltantes_semana"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "location_employee_restrictions_location_id_fkey"
@@ -912,6 +2058,96 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      materiais_obra: {
+        Row: {
+          codigo_material: string | null
+          created_at: string | null
+          data_fatura: string | null
+          data_lancamento: string
+          desconto: number | null
+          fornecedor_fatura: string | null
+          id: string
+          insumo_id: string | null
+          iva_incluido_item: boolean | null
+          iva_percentual: number | null
+          iva_rateado: boolean | null
+          nome_material: string
+          numero_fatura: string | null
+          obra_id: string
+          observacoes: string | null
+          preco_unitario: number
+          quantidade: number
+          unidade_medida: string
+          updated_at: string | null
+          valor_iva: number | null
+          valor_total: number
+          valor_total_com_iva: number | null
+        }
+        Insert: {
+          codigo_material?: string | null
+          created_at?: string | null
+          data_fatura?: string | null
+          data_lancamento?: string
+          desconto?: number | null
+          fornecedor_fatura?: string | null
+          id?: string
+          insumo_id?: string | null
+          iva_incluido_item?: boolean | null
+          iva_percentual?: number | null
+          iva_rateado?: boolean | null
+          nome_material: string
+          numero_fatura?: string | null
+          obra_id: string
+          observacoes?: string | null
+          preco_unitario: number
+          quantidade: number
+          unidade_medida: string
+          updated_at?: string | null
+          valor_iva?: number | null
+          valor_total: number
+          valor_total_com_iva?: number | null
+        }
+        Update: {
+          codigo_material?: string | null
+          created_at?: string | null
+          data_fatura?: string | null
+          data_lancamento?: string
+          desconto?: number | null
+          fornecedor_fatura?: string | null
+          id?: string
+          insumo_id?: string | null
+          iva_incluido_item?: boolean | null
+          iva_percentual?: number | null
+          iva_rateado?: boolean | null
+          nome_material?: string
+          numero_fatura?: string | null
+          obra_id?: string
+          observacoes?: string | null
+          preco_unitario?: number
+          quantidade?: number
+          unidade_medida?: string
+          updated_at?: string | null
+          valor_iva?: number | null
+          valor_total?: number
+          valor_total_com_iva?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "materiais_obra_insumo_id_fkey"
+            columns: ["insumo_id"]
+            isOneToOne: false
+            referencedRelation: "insumos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materiais_obra_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       monthly_expected_hours: {
         Row: {
@@ -957,6 +2193,41 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "monthly_expected_hours_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_in_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "monthly_expected_hours_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_out_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "monthly_expected_hours_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_end_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "monthly_expected_hours_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_start_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "monthly_expected_hours_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_pontos_faltantes_semana"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -1143,7 +2414,591 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "notification_settings_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_in_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "notification_settings_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_out_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "notification_settings_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_end_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "notification_settings_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_start_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "notification_settings_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_pontos_faltantes_semana"
+            referencedColumns: ["user_id"]
+          },
         ]
+      }
+      obras: {
+        Row: {
+          cliente_id: string | null
+          codigo: string | null
+          created_at: string | null
+          descricao: string | null
+          endereco: string | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          nome: string
+          prazo: string | null
+          progresso: number
+          status: string
+          updated_at: string | null
+          valor: number
+        }
+        Insert: {
+          cliente_id?: string | null
+          codigo?: string | null
+          created_at?: string | null
+          descricao?: string | null
+          endereco?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          nome: string
+          prazo?: string | null
+          progresso?: number
+          status?: string
+          updated_at?: string | null
+          valor?: number
+        }
+        Update: {
+          cliente_id?: string | null
+          codigo?: string | null
+          created_at?: string | null
+          descricao?: string | null
+          endereco?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          nome?: string
+          prazo?: string | null
+          progresso?: number
+          status?: string
+          updated_at?: string | null
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "obras_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orcamento_equipamentos: {
+        Row: {
+          created_at: string
+          equipamento_base_id: string | null
+          id: string
+          nome: string
+          orcamento_id: string
+          periodo: string | null
+          quantidade: number
+          tipo: string
+          total: number
+          unidade: string
+          valor_unitario: number
+        }
+        Insert: {
+          created_at?: string
+          equipamento_base_id?: string | null
+          id?: string
+          nome: string
+          orcamento_id: string
+          periodo?: string | null
+          quantidade?: number
+          tipo: string
+          total?: number
+          unidade: string
+          valor_unitario?: number
+        }
+        Update: {
+          created_at?: string
+          equipamento_base_id?: string | null
+          id?: string
+          nome?: string
+          orcamento_id?: string
+          periodo?: string | null
+          quantidade?: number
+          tipo?: string
+          total?: number
+          unidade?: string
+          valor_unitario?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamento_equipamentos_equipamento_base_id_fkey"
+            columns: ["equipamento_base_id"]
+            isOneToOne: false
+            referencedRelation: "tipos_equipamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamento_equipamentos_orcamento_id_fkey"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orcamento_mao_obra: {
+        Row: {
+          created_at: string
+          funcao: string
+          id: string
+          observacoes: string | null
+          orcamento_id: string
+          quantidade_dias: number
+          quantidade_pessoas: number
+          terceirizado: boolean
+          tipo_mao_obra_id: string | null
+          total: number
+          valor_dia: number
+        }
+        Insert: {
+          created_at?: string
+          funcao: string
+          id?: string
+          observacoes?: string | null
+          orcamento_id: string
+          quantidade_dias?: number
+          quantidade_pessoas?: number
+          terceirizado?: boolean
+          tipo_mao_obra_id?: string | null
+          total?: number
+          valor_dia?: number
+        }
+        Update: {
+          created_at?: string
+          funcao?: string
+          id?: string
+          observacoes?: string | null
+          orcamento_id?: string
+          quantidade_dias?: number
+          quantidade_pessoas?: number
+          terceirizado?: boolean
+          tipo_mao_obra_id?: string | null
+          total?: number
+          valor_dia?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamento_mao_obra_orcamento_id_fkey"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamento_mao_obra_tipo_mao_obra_id_fkey"
+            columns: ["tipo_mao_obra_id"]
+            isOneToOne: false
+            referencedRelation: "tipos_mao_obra"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orcamento_revisoes: {
+        Row: {
+          created_at: string | null
+          data_revisao: string | null
+          descricao: string | null
+          id: string
+          numero_revisao: number
+          observacoes: string | null
+          orcamento_id: string
+          snapshot_dados: Json | null
+          titulo: string
+          total_com_iva: number | null
+          total_sem_iva: number | null
+          updated_at: string | null
+          validade_dias: number | null
+          versao_atual: boolean | null
+        }
+        Insert: {
+          created_at?: string | null
+          data_revisao?: string | null
+          descricao?: string | null
+          id?: string
+          numero_revisao: number
+          observacoes?: string | null
+          orcamento_id: string
+          snapshot_dados?: Json | null
+          titulo: string
+          total_com_iva?: number | null
+          total_sem_iva?: number | null
+          updated_at?: string | null
+          validade_dias?: number | null
+          versao_atual?: boolean | null
+        }
+        Update: {
+          created_at?: string | null
+          data_revisao?: string | null
+          descricao?: string | null
+          id?: string
+          numero_revisao?: number
+          observacoes?: string | null
+          orcamento_id?: string
+          snapshot_dados?: Json | null
+          titulo?: string
+          total_com_iva?: number | null
+          total_sem_iva?: number | null
+          updated_at?: string | null
+          validade_dias?: number | null
+          versao_atual?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamento_revisoes_orcamento_id_fkey"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orcamento_servicos: {
+        Row: {
+          categoria: string
+          codigo: string
+          created_at: string
+          descricao: string
+          id: string
+          orcamento_id: string
+          ordem: number
+          quantidade: number
+          servico_base_id: string | null
+          total: number
+          unidade_medida: string
+          valor_unitario: number
+        }
+        Insert: {
+          categoria: string
+          codigo: string
+          created_at?: string
+          descricao: string
+          id?: string
+          orcamento_id: string
+          ordem?: number
+          quantidade?: number
+          servico_base_id?: string | null
+          total?: number
+          unidade_medida: string
+          valor_unitario?: number
+        }
+        Update: {
+          categoria?: string
+          codigo?: string
+          created_at?: string
+          descricao?: string
+          id?: string
+          orcamento_id?: string
+          ordem?: number
+          quantidade?: number
+          servico_base_id?: string | null
+          total?: number
+          unidade_medida?: string
+          valor_unitario?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamento_servicos_orcamento_id_fkey"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamento_servicos_servico_base_id_fkey"
+            columns: ["servico_base_id"]
+            isOneToOne: false
+            referencedRelation: "servicos_base"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orcamento_subtopicos: {
+        Row: {
+          created_at: string | null
+          descricao: string
+          id: string
+          numero: number
+          ordem: number | null
+          quantidade: number
+          topico_id: string
+          unidade: string
+          updated_at: string | null
+          valor_total: number
+          valor_unitario: number
+        }
+        Insert: {
+          created_at?: string | null
+          descricao: string
+          id?: string
+          numero: number
+          ordem?: number | null
+          quantidade?: number
+          topico_id: string
+          unidade: string
+          updated_at?: string | null
+          valor_total?: number
+          valor_unitario?: number
+        }
+        Update: {
+          created_at?: string | null
+          descricao?: string
+          id?: string
+          numero?: number
+          ordem?: number | null
+          quantidade?: number
+          topico_id?: string
+          unidade?: string
+          updated_at?: string | null
+          valor_total?: number
+          valor_unitario?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamento_subtopicos_topico_id_fkey"
+            columns: ["topico_id"]
+            isOneToOne: false
+            referencedRelation: "orcamento_topicos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orcamento_topicos: {
+        Row: {
+          created_at: string | null
+          id: string
+          nome: string
+          numero: number
+          ordem: number | null
+          revisao_id: string
+          total: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          nome: string
+          numero: number
+          ordem?: number | null
+          revisao_id: string
+          total?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          nome?: string
+          numero?: number
+          ordem?: number | null
+          revisao_id?: string
+          total?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamento_topicos_revisao_id_fkey"
+            columns: ["revisao_id"]
+            isOneToOne: false
+            referencedRelation: "orcamento_revisoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orcamentos: {
+        Row: {
+          cliente_id: string | null
+          created_at: string
+          created_by: string | null
+          data_orcamento: string
+          descricao: string | null
+          id: string
+          numero: string
+          numero_aleatorio: string | null
+          obra_gerada_id: string | null
+          obra_id: string | null
+          observacoes: string | null
+          revisao_atual: number | null
+          status: Database["public"]["Enums"]["orcamento_status"]
+          titulo: string
+          total_com_iva: number
+          total_sem_iva: number
+          updated_at: string
+          validade_dias: number
+        }
+        Insert: {
+          cliente_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          data_orcamento?: string
+          descricao?: string | null
+          id?: string
+          numero: string
+          numero_aleatorio?: string | null
+          obra_gerada_id?: string | null
+          obra_id?: string | null
+          observacoes?: string | null
+          revisao_atual?: number | null
+          status?: Database["public"]["Enums"]["orcamento_status"]
+          titulo: string
+          total_com_iva?: number
+          total_sem_iva?: number
+          updated_at?: string
+          validade_dias?: number
+        }
+        Update: {
+          cliente_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          data_orcamento?: string
+          descricao?: string | null
+          id?: string
+          numero?: string
+          numero_aleatorio?: string | null
+          obra_gerada_id?: string | null
+          obra_id?: string | null
+          observacoes?: string | null
+          revisao_atual?: number | null
+          status?: Database["public"]["Enums"]["orcamento_status"]
+          titulo?: string
+          total_com_iva?: number
+          total_sem_iva?: number
+          updated_at?: string
+          validade_dias?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamentos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamentos_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamentos_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_in_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "orcamentos_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_out_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "orcamentos_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_end_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "orcamentos_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_start_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "orcamentos_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_pontos_faltantes_semana"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "orcamentos_obra_gerada_id_fkey"
+            columns: ["obra_gerada_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamentos_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orcamentos_modelos_pdf: {
+        Row: {
+          ativo: boolean | null
+          caminho_arquivo: string
+          created_at: string | null
+          descricao: string | null
+          id: string
+          nome: string
+          nome_arquivo_original: string
+          tamanho_arquivo: number
+          tipo_trabalho: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          caminho_arquivo: string
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          nome: string
+          nome_arquivo_original: string
+          tamanho_arquivo: number
+          tipo_trabalho?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          caminho_arquivo?: string
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          nome?: string
+          nome_arquivo_original?: string
+          tamanho_arquivo?: number
+          tipo_trabalho?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       overtime_pending_history: {
         Row: {
@@ -1199,6 +3054,86 @@ export type Database = {
           transferred_to_period_end?: string | null
           transferred_to_period_start?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      pagamentos_fatura: {
+        Row: {
+          created_at: string
+          data_pagamento: string
+          fatura_id: string
+          id: string
+          metodo_pagamento: string
+          observacoes: string | null
+          referencia: string | null
+          valor_pago: number
+        }
+        Insert: {
+          created_at?: string
+          data_pagamento?: string
+          fatura_id: string
+          id?: string
+          metodo_pagamento: string
+          observacoes?: string | null
+          referencia?: string | null
+          valor_pago: number
+        }
+        Update: {
+          created_at?: string
+          data_pagamento?: string
+          fatura_id?: string
+          id?: string
+          metodo_pagamento?: string
+          observacoes?: string | null
+          referencia?: string | null
+          valor_pago?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pagamentos_fatura_fatura_id_fkey"
+            columns: ["fatura_id"]
+            isOneToOne: false
+            referencedRelation: "faturas_receita"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patrimonios_veiculos: {
+        Row: {
+          ano: number | null
+          ativo: boolean | null
+          cor: string | null
+          created_at: string | null
+          id: string
+          marca: string | null
+          matricula: string
+          modelo: string | null
+          observacoes: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          ano?: number | null
+          ativo?: boolean | null
+          cor?: string | null
+          created_at?: string | null
+          id?: string
+          marca?: string | null
+          matricula: string
+          modelo?: string | null
+          observacoes?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          ano?: number | null
+          ativo?: boolean | null
+          cor?: string | null
+          created_at?: string | null
+          id?: string
+          marca?: string | null
+          matricula?: string
+          modelo?: string | null
+          observacoes?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -1263,11 +3198,81 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "payment_history_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_in_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "payment_history_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_out_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "payment_history_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_end_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "payment_history_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_start_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "payment_history_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_pontos_faltantes_semana"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "payment_history_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_history_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_in_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "payment_history_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_out_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "payment_history_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_end_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "payment_history_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_start_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "payment_history_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_pontos_faltantes_semana"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -1336,6 +3341,41 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payroll_overtime_settings_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_in_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "payroll_overtime_settings_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_out_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "payroll_overtime_settings_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_end_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "payroll_overtime_settings_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_start_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "payroll_overtime_settings_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_pontos_faltantes_semana"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -1407,6 +3447,174 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payroll_transfers_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_in_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "payroll_transfers_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_out_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "payroll_transfers_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_end_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "payroll_transfers_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_start_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "payroll_transfers_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_pontos_faltantes_semana"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      payslips: {
+        Row: {
+          base_salary: number | null
+          christmas_subsidy: number | null
+          created_at: string | null
+          created_by: string | null
+          employee_id: string | null
+          employee_name: string
+          holiday_subsidy: number | null
+          hourly_rate: number | null
+          id: string
+          irs_deduction: number | null
+          meal_allowance: number | null
+          meal_allowance_days: number | null
+          meal_allowance_unit_value: number | null
+          month_days: number | null
+          net_pay: number | null
+          nif: string | null
+          other_allowances: Json | null
+          other_deductions: Json | null
+          pdf_filename: string | null
+          period_end: string
+          period_start: string
+          raw_text: string | null
+          social_security: number | null
+          total_allowances: number | null
+          total_deductions: number | null
+          updated_at: string | null
+          weekly_hours: number | null
+        }
+        Insert: {
+          base_salary?: number | null
+          christmas_subsidy?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          employee_id?: string | null
+          employee_name: string
+          holiday_subsidy?: number | null
+          hourly_rate?: number | null
+          id?: string
+          irs_deduction?: number | null
+          meal_allowance?: number | null
+          meal_allowance_days?: number | null
+          meal_allowance_unit_value?: number | null
+          month_days?: number | null
+          net_pay?: number | null
+          nif?: string | null
+          other_allowances?: Json | null
+          other_deductions?: Json | null
+          pdf_filename?: string | null
+          period_end: string
+          period_start: string
+          raw_text?: string | null
+          social_security?: number | null
+          total_allowances?: number | null
+          total_deductions?: number | null
+          updated_at?: string | null
+          weekly_hours?: number | null
+        }
+        Update: {
+          base_salary?: number | null
+          christmas_subsidy?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          employee_id?: string | null
+          employee_name?: string
+          holiday_subsidy?: number | null
+          hourly_rate?: number | null
+          id?: string
+          irs_deduction?: number | null
+          meal_allowance?: number | null
+          meal_allowance_days?: number | null
+          meal_allowance_unit_value?: number | null
+          month_days?: number | null
+          net_pay?: number | null
+          nif?: string | null
+          other_allowances?: Json | null
+          other_deductions?: Json | null
+          pdf_filename?: string | null
+          period_end?: string
+          period_start?: string
+          raw_text?: string | null
+          social_security?: number | null
+          total_allowances?: number | null
+          total_deductions?: number | null
+          updated_at?: string | null
+          weekly_hours?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payslips_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payslips_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_in_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "payslips_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_out_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "payslips_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_end_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "payslips_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_start_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "payslips_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_pontos_faltantes_semana"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -1588,6 +3796,179 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "push_tokens_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_in_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "push_tokens_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_out_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "push_tokens_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_end_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "push_tokens_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_start_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "push_tokens_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_pontos_faltantes_semana"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      rdo: {
+        Row: {
+          atividades_realizadas: string
+          created_at: string
+          data_relatorio: string
+          descricao_materiais: string | null
+          funcoes_pessoas: string | null
+          id: string
+          materiais_comprados: boolean | null
+          obra_id: string
+          observacoes: string | null
+          quantidade_materiais: string | null
+          quantidade_pessoas: number
+          updated_at: string
+          valor_materiais: number | null
+        }
+        Insert: {
+          atividades_realizadas: string
+          created_at?: string
+          data_relatorio: string
+          descricao_materiais?: string | null
+          funcoes_pessoas?: string | null
+          id?: string
+          materiais_comprados?: boolean | null
+          obra_id: string
+          observacoes?: string | null
+          quantidade_materiais?: string | null
+          quantidade_pessoas?: number
+          updated_at?: string
+          valor_materiais?: number | null
+        }
+        Update: {
+          atividades_realizadas?: string
+          created_at?: string
+          data_relatorio?: string
+          descricao_materiais?: string | null
+          funcoes_pessoas?: string | null
+          id?: string
+          materiais_comprados?: boolean | null
+          obra_id?: string
+          observacoes?: string | null
+          quantidade_materiais?: string | null
+          quantidade_pessoas?: number
+          updated_at?: string
+          valor_materiais?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rdo_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rdo_fotos: {
+        Row: {
+          caminho_arquivo: string
+          created_at: string
+          descricao: string | null
+          id: string
+          nome_arquivo: string
+          ordem: number | null
+          rdo_id: string
+          tamanho_arquivo: number
+          updated_at: string
+        }
+        Insert: {
+          caminho_arquivo: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome_arquivo: string
+          ordem?: number | null
+          rdo_id: string
+          tamanho_arquivo: number
+          updated_at?: string
+        }
+        Update: {
+          caminho_arquivo?: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome_arquivo?: string
+          ordem?: number | null
+          rdo_id?: string
+          tamanho_arquivo?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rdo_fotos_rdo_id_fkey"
+            columns: ["rdo_id"]
+            isOneToOne: false
+            referencedRelation: "rdo"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rdo_materiais: {
+        Row: {
+          created_at: string
+          descricao: string
+          id: string
+          quantidade: string
+          rdo_id: string
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          created_at?: string
+          descricao: string
+          id?: string
+          quantidade: string
+          rdo_id: string
+          updated_at?: string
+          valor: number
+        }
+        Update: {
+          created_at?: string
+          descricao?: string
+          id?: string
+          quantidade?: string
+          rdo_id?: string
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rdo_materiais_rdo_id_fkey"
+            columns: ["rdo_id"]
+            isOneToOne: false
+            referencedRelation: "rdo"
+            referencedColumns: ["id"]
+          },
         ]
       }
       salary_advance_history: {
@@ -1675,6 +4056,176 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      servicos_base: {
+        Row: {
+          ativo: boolean
+          categoria: string
+          codigo: string
+          created_at: string
+          descricao: string
+          id: string
+          unidade_medida: string
+          updated_at: string
+          valor_unitario_base: number
+        }
+        Insert: {
+          ativo?: boolean
+          categoria: string
+          codigo: string
+          created_at?: string
+          descricao: string
+          id?: string
+          unidade_medida: string
+          updated_at?: string
+          valor_unitario_base?: number
+        }
+        Update: {
+          ativo?: boolean
+          categoria?: string
+          codigo?: string
+          created_at?: string
+          descricao?: string
+          id?: string
+          unidade_medida?: string
+          updated_at?: string
+          valor_unitario_base?: number
+        }
+        Relationships: []
+      }
+      stock_atual: {
+        Row: {
+          id: string
+          insumo_id: string
+          quantidade_disponivel: number
+          quantidade_reservada: number
+          stock_minimo: number | null
+          ultima_atualizacao: string
+        }
+        Insert: {
+          id?: string
+          insumo_id: string
+          quantidade_disponivel?: number
+          quantidade_reservada?: number
+          stock_minimo?: number | null
+          ultima_atualizacao?: string
+        }
+        Update: {
+          id?: string
+          insumo_id?: string
+          quantidade_disponivel?: number
+          quantidade_reservada?: number
+          stock_minimo?: number | null
+          ultima_atualizacao?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_atual_insumo_id_fkey"
+            columns: ["insumo_id"]
+            isOneToOne: true
+            referencedRelation: "insumos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subtopico_equipamentos: {
+        Row: {
+          created_at: string | null
+          equipamento_id: string
+          id: string
+          periodo: string | null
+          quantidade: number
+          subtopico_id: string
+          updated_at: string | null
+          valor_total: number
+          valor_unitario: number
+        }
+        Insert: {
+          created_at?: string | null
+          equipamento_id: string
+          id?: string
+          periodo?: string | null
+          quantidade?: number
+          subtopico_id: string
+          updated_at?: string | null
+          valor_total?: number
+          valor_unitario?: number
+        }
+        Update: {
+          created_at?: string | null
+          equipamento_id?: string
+          id?: string
+          periodo?: string | null
+          quantidade?: number
+          subtopico_id?: string
+          updated_at?: string | null
+          valor_total?: number
+          valor_unitario?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subtopico_equipamentos_equipamento_id_fkey"
+            columns: ["equipamento_id"]
+            isOneToOne: false
+            referencedRelation: "tipos_equipamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subtopico_equipamentos_subtopico_id_fkey"
+            columns: ["subtopico_id"]
+            isOneToOne: false
+            referencedRelation: "orcamento_subtopicos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subtopico_materiais: {
+        Row: {
+          created_at: string | null
+          id: string
+          insumo_id: string
+          quantidade: number
+          subtopico_id: string
+          updated_at: string | null
+          valor_total: number
+          valor_unitario: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          insumo_id: string
+          quantidade?: number
+          subtopico_id: string
+          updated_at?: string | null
+          valor_total?: number
+          valor_unitario?: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          insumo_id?: string
+          quantidade?: number
+          subtopico_id?: string
+          updated_at?: string | null
+          valor_total?: number
+          valor_unitario?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subtopico_materiais_insumo_id_fkey"
+            columns: ["insumo_id"]
+            isOneToOne: false
+            referencedRelation: "insumos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subtopico_materiais_subtopico_id_fkey"
+            columns: ["subtopico_id"]
+            isOneToOne: false
+            referencedRelation: "orcamento_subtopicos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       system_alerts: {
         Row: {
@@ -1850,7 +4401,105 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "time_records_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_in_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "time_records_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_out_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "time_records_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_end_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "time_records_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_start_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "time_records_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "vw_pontos_faltantes_semana"
+            referencedColumns: ["user_id"]
+          },
         ]
+      }
+      tipos_equipamentos: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          nome: string
+          tipo: string
+          unidade: string
+          updated_at: string
+          valor_unitario_base: number
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome: string
+          tipo: string
+          unidade: string
+          updated_at?: string
+          valor_unitario_base?: number
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome?: string
+          tipo?: string
+          unidade?: string
+          updated_at?: string
+          valor_unitario_base?: number
+        }
+        Relationships: []
+      }
+      tipos_mao_obra: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          funcao: string
+          id: string
+          updated_at: string
+          valor_dia_base: number
+          valor_hora_base: number
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          funcao: string
+          id?: string
+          updated_at?: string
+          valor_dia_base?: number
+          valor_hora_base?: number
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          funcao?: string
+          id?: string
+          updated_at?: string
+          valor_dia_base?: number
+          valor_hora_base?: number
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
@@ -1919,34 +4568,96 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "user_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_in_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "user_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_out_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "user_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_end_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "user_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_start_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "user_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "vw_pontos_faltantes_semana"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       vacation_balances: {
         Row: {
+          accumulated_days: number | null
+          accumulated_from_year: number | null
+          admission_year: boolean | null
           available_days: number
+          eligibility_date: string | null
+          eligible: boolean | null
           employee_id: string
+          enjoyment_deadline: string | null
           id: string
+          notes: string | null
+          published_date: string | null
           total_days: number
           updated_at: string | null
           used_days: number
+          vesting_date: string | null
           year: number
         }
         Insert: {
+          accumulated_days?: number | null
+          accumulated_from_year?: number | null
+          admission_year?: boolean | null
           available_days?: number
+          eligibility_date?: string | null
+          eligible?: boolean | null
           employee_id: string
+          enjoyment_deadline?: string | null
           id?: string
+          notes?: string | null
+          published_date?: string | null
           total_days?: number
           updated_at?: string | null
           used_days?: number
+          vesting_date?: string | null
           year: number
         }
         Update: {
+          accumulated_days?: number | null
+          accumulated_from_year?: number | null
+          admission_year?: boolean | null
           available_days?: number
+          eligibility_date?: string | null
+          eligible?: boolean | null
           employee_id?: string
+          enjoyment_deadline?: string | null
           id?: string
+          notes?: string | null
+          published_date?: string | null
           total_days?: number
           updated_at?: string | null
           used_days?: number
+          vesting_date?: string | null
           year?: number
         }
         Relationships: [
@@ -1956,6 +4667,156 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_vb_employee"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_in_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "fk_vb_employee"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_out_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "fk_vb_employee"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_end_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "fk_vb_employee"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_start_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "fk_vb_employee"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_pontos_faltantes_semana"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      vacation_map: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          employee_id: string
+          id: string
+          month: number
+          notes: string | null
+          year: number
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          employee_id: string
+          id?: string
+          month: number
+          notes?: string | null
+          year: number
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          employee_id?: string
+          id?: string
+          month?: number
+          notes?: string | null
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vacation_map_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vacation_map_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_in_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "vacation_map_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_out_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "vacation_map_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_end_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "vacation_map_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_start_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "vacation_map_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_pontos_faltantes_semana"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "vacation_map_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vacation_map_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_in_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "vacation_map_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_out_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "vacation_map_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_end_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "vacation_map_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_start_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "vacation_map_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_pontos_faltantes_semana"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -2026,6 +4887,7 @@ export type Database = {
       }
       vacation_requests: {
         Row: {
+          accumulated_days_used: number | null
           adjust_reason: string | null
           approver_id: string | null
           days: number
@@ -2035,14 +4897,18 @@ export type Database = {
           employee_id: string
           end_date: string
           id: string
+          includes_accumulated: boolean | null
           job_function_id: string | null
           previous_end_date: string | null
           previous_start_date: string | null
           requested_at: string
           start_date: string
           status: string
+          working_days: number | null
+          year_reference: number | null
         }
         Insert: {
+          accumulated_days_used?: number | null
           adjust_reason?: string | null
           approver_id?: string | null
           days: number
@@ -2052,14 +4918,18 @@ export type Database = {
           employee_id: string
           end_date: string
           id?: string
+          includes_accumulated?: boolean | null
           job_function_id?: string | null
           previous_end_date?: string | null
           previous_start_date?: string | null
           requested_at?: string
           start_date: string
           status?: string
+          working_days?: number | null
+          year_reference?: number | null
         }
         Update: {
+          accumulated_days_used?: number | null
           adjust_reason?: string | null
           approver_id?: string | null
           days?: number
@@ -2069,12 +4939,15 @@ export type Database = {
           employee_id?: string
           end_date?: string
           id?: string
+          includes_accumulated?: boolean | null
           job_function_id?: string | null
           previous_end_date?: string | null
           previous_start_date?: string | null
           requested_at?: string
           start_date?: string
           status?: string
+          working_days?: number | null
+          year_reference?: number | null
         }
         Relationships: [
           {
@@ -2092,6 +4965,41 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_employee"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_in_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "fk_employee"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_out_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "fk_employee"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_end_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "fk_employee"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_start_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "fk_employee"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_pontos_faltantes_semana"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "fk_job_function"
             columns: ["job_function_id"]
             isOneToOne: false
@@ -2099,6 +5007,468 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      veiculos_abastecimentos: {
+        Row: {
+          consumo_medio: number | null
+          created_at: string | null
+          custo_por_km: number | null
+          data_abastecimento: string
+          despesa_id: string | null
+          id: string
+          kilometragem: number
+          km_anterior: number | null
+          litros: number
+          observacoes: string | null
+          posto: string | null
+          tipo_combustivel: string | null
+          updated_at: string | null
+          valor_total: number
+          veiculo_id: string
+        }
+        Insert: {
+          consumo_medio?: number | null
+          created_at?: string | null
+          custo_por_km?: number | null
+          data_abastecimento?: string
+          despesa_id?: string | null
+          id?: string
+          kilometragem: number
+          km_anterior?: number | null
+          litros: number
+          observacoes?: string | null
+          posto?: string | null
+          tipo_combustivel?: string | null
+          updated_at?: string | null
+          valor_total: number
+          veiculo_id: string
+        }
+        Update: {
+          consumo_medio?: number | null
+          created_at?: string | null
+          custo_por_km?: number | null
+          data_abastecimento?: string
+          despesa_id?: string | null
+          id?: string
+          kilometragem?: number
+          km_anterior?: number | null
+          litros?: number
+          observacoes?: string | null
+          posto?: string | null
+          tipo_combustivel?: string | null
+          updated_at?: string | null
+          valor_total?: number
+          veiculo_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "veiculos_abastecimentos_despesa_id_fkey"
+            columns: ["despesa_id"]
+            isOneToOne: false
+            referencedRelation: "despesas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "veiculos_abastecimentos_veiculo_id_fkey"
+            columns: ["veiculo_id"]
+            isOneToOne: false
+            referencedRelation: "patrimonios_veiculos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      veiculos_alertas: {
+        Row: {
+          created_at: string | null
+          data_alerta: string
+          descricao: string | null
+          id: string
+          resolvido: boolean | null
+          tipo_alerta: string
+          updated_at: string | null
+          veiculo_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          data_alerta: string
+          descricao?: string | null
+          id?: string
+          resolvido?: boolean | null
+          tipo_alerta: string
+          updated_at?: string | null
+          veiculo_id: string
+        }
+        Update: {
+          created_at?: string | null
+          data_alerta?: string
+          descricao?: string | null
+          id?: string
+          resolvido?: boolean | null
+          tipo_alerta?: string
+          updated_at?: string | null
+          veiculo_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "veiculos_alertas_veiculo_id_fkey"
+            columns: ["veiculo_id"]
+            isOneToOne: false
+            referencedRelation: "patrimonios_veiculos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      veiculos_inspecoes: {
+        Row: {
+          centro_inspecao: string | null
+          created_at: string | null
+          custo: number | null
+          data_inspecao: string
+          id: string
+          observacoes: string | null
+          proxima_inspecao: string | null
+          resultado: string | null
+          updated_at: string | null
+          veiculo_id: string
+        }
+        Insert: {
+          centro_inspecao?: string | null
+          created_at?: string | null
+          custo?: number | null
+          data_inspecao: string
+          id?: string
+          observacoes?: string | null
+          proxima_inspecao?: string | null
+          resultado?: string | null
+          updated_at?: string | null
+          veiculo_id: string
+        }
+        Update: {
+          centro_inspecao?: string | null
+          created_at?: string | null
+          custo?: number | null
+          data_inspecao?: string
+          id?: string
+          observacoes?: string | null
+          proxima_inspecao?: string | null
+          resultado?: string | null
+          updated_at?: string | null
+          veiculo_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "veiculos_inspecoes_veiculo_id_fkey"
+            columns: ["veiculo_id"]
+            isOneToOne: false
+            referencedRelation: "patrimonios_veiculos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      veiculos_iuc: {
+        Row: {
+          ano_referencia: number
+          created_at: string | null
+          data_limite: string | null
+          data_pagamento: string | null
+          id: string
+          observacoes: string | null
+          pago: boolean | null
+          updated_at: string | null
+          valor: number
+          veiculo_id: string
+        }
+        Insert: {
+          ano_referencia: number
+          created_at?: string | null
+          data_limite?: string | null
+          data_pagamento?: string | null
+          id?: string
+          observacoes?: string | null
+          pago?: boolean | null
+          updated_at?: string | null
+          valor?: number
+          veiculo_id: string
+        }
+        Update: {
+          ano_referencia?: number
+          created_at?: string | null
+          data_limite?: string | null
+          data_pagamento?: string | null
+          id?: string
+          observacoes?: string | null
+          pago?: boolean | null
+          updated_at?: string | null
+          valor?: number
+          veiculo_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "veiculos_iuc_veiculo_id_fkey"
+            columns: ["veiculo_id"]
+            isOneToOne: false
+            referencedRelation: "patrimonios_veiculos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      veiculos_seguros: {
+        Row: {
+          ativo: boolean | null
+          created_at: string | null
+          data_fim: string
+          data_inicio: string
+          fornecedor_id: string | null
+          id: string
+          numero_apolice: string | null
+          observacoes: string | null
+          tipo_cobertura: string | null
+          updated_at: string | null
+          valor_premio: number | null
+          veiculo_id: string
+        }
+        Insert: {
+          ativo?: boolean | null
+          created_at?: string | null
+          data_fim: string
+          data_inicio: string
+          fornecedor_id?: string | null
+          id?: string
+          numero_apolice?: string | null
+          observacoes?: string | null
+          tipo_cobertura?: string | null
+          updated_at?: string | null
+          valor_premio?: number | null
+          veiculo_id: string
+        }
+        Update: {
+          ativo?: boolean | null
+          created_at?: string | null
+          data_fim?: string
+          data_inicio?: string
+          fornecedor_id?: string | null
+          id?: string
+          numero_apolice?: string | null
+          observacoes?: string | null
+          tipo_cobertura?: string | null
+          updated_at?: string | null
+          valor_premio?: number | null
+          veiculo_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "veiculos_seguros_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "veiculos_seguros_veiculo_id_fkey"
+            columns: ["veiculo_id"]
+            isOneToOne: false
+            referencedRelation: "patrimonios_veiculos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      website_contacts: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string
+          is_read: boolean | null
+          mensagem: string
+          nome: string
+          telefone: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          is_read?: boolean | null
+          mensagem: string
+          nome: string
+          telefone?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          is_read?: boolean | null
+          mensagem?: string
+          nome?: string
+          telefone?: string | null
+        }
+        Relationships: []
+      }
+      website_gallery: {
+        Row: {
+          alt_text: string | null
+          category: string | null
+          created_at: string | null
+          id: string
+          image_url: string
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          alt_text?: string | null
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          image_url: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          alt_text?: string | null
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          image_url?: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      website_pages: {
+        Row: {
+          content: Json | null
+          created_at: string | null
+          id: string
+          page_key: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          content?: Json | null
+          created_at?: string | null
+          id?: string
+          page_key: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: Json | null
+          created_at?: string | null
+          id?: string
+          page_key?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      website_projects: {
+        Row: {
+          cover_image: string | null
+          created_at: string | null
+          date: string | null
+          description: string | null
+          id: string
+          images: string[] | null
+          is_featured: boolean | null
+          is_published: boolean | null
+          location: string | null
+          slug: string
+          sort_order: number | null
+          title: string
+          type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          cover_image?: string | null
+          created_at?: string | null
+          date?: string | null
+          description?: string | null
+          id?: string
+          images?: string[] | null
+          is_featured?: boolean | null
+          is_published?: boolean | null
+          location?: string | null
+          slug: string
+          sort_order?: number | null
+          title: string
+          type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          cover_image?: string | null
+          created_at?: string | null
+          date?: string | null
+          description?: string | null
+          id?: string
+          images?: string[] | null
+          is_featured?: boolean | null
+          is_published?: boolean | null
+          location?: string | null
+          slug?: string
+          sort_order?: number | null
+          title?: string
+          type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      website_services: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          sort_order: number | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          sort_order?: number | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          sort_order?: number | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      website_settings: {
+        Row: {
+          created_at: string | null
+          id: string
+          label: string | null
+          setting_key: string
+          setting_value: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          label?: string | null
+          setting_key: string
+          setting_value: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          label?: string | null
+          setting_key?: string
+          setting_value?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       work_shift_schedules: {
         Row: {
@@ -2185,7 +5555,47 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      vw_falta_clock_in_hoje: {
+        Row: {
+          name: string | null
+          phone: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      vw_falta_clock_out_hoje: {
+        Row: {
+          name: string | null
+          phone: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      vw_falta_lunch_end_hoje: {
+        Row: {
+          name: string | null
+          phone: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      vw_falta_lunch_start_hoje: {
+        Row: {
+          name: string | null
+          phone: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      vw_pontos_faltantes_semana: {
+        Row: {
+          dia_sem_registro: string | null
+          name: string | null
+          phone: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       apply_balance_to_payment: {
@@ -2217,11 +5627,25 @@ export type Database = {
           pending_salary_advance: number
         }[]
       }
+      calculate_vacation_entitlement: {
+        Args: { employee_id: string; reference_year: number }
+        Returns: {
+          accumulated_days: number
+          admission_year: boolean
+          enjoyment_deadline: string
+          total_days: number
+          vesting_date: string
+        }[]
+      }
       check_email_availability: { Args: { check_email: string }; Returns: Json }
       check_excessive_overtime: { Args: never; Returns: undefined }
       check_incomplete_records: { Args: never; Returns: undefined }
       cleanup_expired_sessions: { Args: never; Returns: undefined }
       cleanup_orphan_users: { Args: never; Returns: Json }
+      count_working_days: {
+        Args: { end_date: string; start_date: string }
+        Returns: number
+      }
       count_working_days_elapsed: {
         Args: { target_month: number; target_year: number }
         Returns: number
@@ -2325,6 +5749,7 @@ export type Database = {
       is_admin_user: { Args: never; Returns: boolean }
       is_month_closed: { Args: { check_date: string }; Returns: boolean }
       is_national_holiday: { Args: { check_date: string }; Returns: boolean }
+      is_working_day: { Args: { check_date: string }; Returns: boolean }
       process_automatic_transfers: {
         Args: {
           from_month: number
@@ -2343,6 +5768,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      process_vacation_request: {
+        Args: {
+          p_action: string
+          p_approver_id: string
+          p_justification?: string
+          p_request_id: string
+        }
+        Returns: undefined
+      }
       send_scheduled_push_notifications: {
         Args: { check_time: string; notification_type: string }
         Returns: undefined
@@ -2356,10 +5790,23 @@ export type Database = {
         Returns: undefined
       }
       update_monthly_expected_hours: { Args: never; Returns: undefined }
+      update_vacation_balance: {
+        Args: { p_employee_id: string; p_year: number }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "super_admin" | "user"
+      despesa_status: "pendente" | "aprovada" | "paga" | "cancelada"
       employee_status: "active" | "inactive"
+      fatura_status:
+        | "pendente"
+        | "parcialmente_paga"
+        | "paga"
+        | "cancelada"
+        | "vencida"
+      fornecedor_status: "ativo" | "inativo"
+      orcamento_status: "rascunho" | "enviado" | "aprovado" | "rejeitado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2488,7 +5935,17 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "super_admin", "user"],
+      despesa_status: ["pendente", "aprovada", "paga", "cancelada"],
       employee_status: ["active", "inactive"],
+      fatura_status: [
+        "pendente",
+        "parcialmente_paga",
+        "paga",
+        "cancelada",
+        "vencida",
+      ],
+      fornecedor_status: ["ativo", "inativo"],
+      orcamento_status: ["rascunho", "enviado", "aprovado", "rejeitado"],
     },
   },
 } as const
