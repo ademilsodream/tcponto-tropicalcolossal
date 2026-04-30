@@ -109,6 +109,12 @@ const AdjustPreviousDays: React.FC<AdjustPreviousDaysProps> = ({ onBack }) => {
   const [editedDates, setEditedDates] = useState<Set<string>>(new Set());
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [shiftSchedule, setShiftSchedule] = useState<{
+    start_time: string | null;
+    break_start_time: string | null;
+    break_end_time: string | null;
+    end_time: string | null;
+  } | null>(null);
 
   const { user, profile } = useOptimizedAuth();
   const { toast } = useToast();
@@ -239,6 +245,9 @@ const AdjustPreviousDays: React.FC<AdjustPreviousDaysProps> = ({ onBack }) => {
         });
       }
       
+      // Carregar schedule do turno para o dia da semana selecionado
+      await loadShiftScheduleForDate(date);
+
       // Abrir modal após carregar os dados
       setIsModalOpen(true);
     } catch (error) {
@@ -249,6 +258,45 @@ const AdjustPreviousDays: React.FC<AdjustPreviousDaysProps> = ({ onBack }) => {
         variant: "destructive",
       });
     }
+  };
+
+  const loadShiftScheduleForDate = async (date: Date) => {
+    try {
+      const shiftId = (profile as any)?.shift_id;
+      if (!shiftId) {
+        setShiftSchedule(null);
+        return;
+      }
+      const dayOfWeek = date.getDay();
+      const { data, error } = await supabase
+        .from('work_shift_schedules')
+        .select('start_time, end_time, break_start_time, break_end_time')
+        .eq('shift_id', shiftId)
+        .eq('day_of_week', dayOfWeek)
+        .eq('is_active', true)
+        .maybeSingle();
+      if (error) throw error;
+      setShiftSchedule(data || null);
+    } catch (err) {
+      console.error('Erro ao carregar schedule do turno:', err);
+      setShiftSchedule(null);
+    }
+  };
+
+  const handleFillFromShift = () => {
+    if (!shiftSchedule) return;
+    const trim = (t: string | null) => (t ? t.substring(0, 5) : '');
+    setEditForm(prev => ({
+      ...prev,
+      clock_in: trim(shiftSchedule.start_time),
+      lunch_start: trim(shiftSchedule.break_start_time),
+      lunch_end: trim(shiftSchedule.break_end_time),
+      clock_out: trim(shiftSchedule.end_time),
+    }));
+    toast({
+      title: 'Horários preenchidos',
+      description: 'Os horários do turno foram aplicados. Você ainda pode ajustá-los manualmente.',
+    });
   };
 
   const handleDateSelect = (date: Date | undefined) => {
@@ -369,6 +417,7 @@ const AdjustPreviousDays: React.FC<AdjustPreviousDaysProps> = ({ onBack }) => {
       reason: '',
       locationName: ''
     });
+    setShiftSchedule(null);
   };
 
   const handleSubmitEdit = async () => {
@@ -674,6 +723,24 @@ const AdjustPreviousDays: React.FC<AdjustPreviousDaysProps> = ({ onBack }) => {
                   </Select>
                 ) : (
                   <p className="text-base text-red-500">Nenhuma obra ativa disponível.</p>
+                )}
+              </div>
+
+              <div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={handleFillFromShift}
+                  disabled={!shiftSchedule || submitting}
+                  className="w-full h-11"
+                >
+                  <Clock className="w-4 h-4 mr-2" />
+                  Preencher com horário do turno
+                </Button>
+                {!shiftSchedule && (
+                  <p className="text-xs text-gray-500 mt-1 text-center">
+                    Sem turno configurado para este dia da semana
+                  </p>
                 )}
               </div>
 
