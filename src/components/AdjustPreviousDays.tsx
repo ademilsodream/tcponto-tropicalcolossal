@@ -194,7 +194,10 @@ const AdjustPreviousDays: React.FC<AdjustPreviousDaysProps> = ({ onBack }) => {
 
       if (error) throw error;
 
-      setAllowedLocations(data || []);
+      const sorted = (data || []).slice().sort((a, b) =>
+        (a.name || '').localeCompare(b.name || '', 'pt-BR', { sensitivity: 'base' })
+      );
+      setAllowedLocations(sorted);
     } catch (error) {
       console.error('Erro ao carregar localizações permitidas:', error);
       toast({
