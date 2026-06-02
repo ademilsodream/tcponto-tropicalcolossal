@@ -162,18 +162,37 @@ export default function VacationRequest() {
     return date ? format(date, "dd/MM/yyyy") : <span className="text-muted-foreground">{placeholder}</span>;
   }
 
-  // Nova mensagem de orientação se saldo for 0
+  // Detalhamento por ano + mensagem se saldo for 0
   const renderBalanceHint = () => {
-    if (balance === null) {
-      return null;
-    }
+    if (balance === null) return null;
     if (balance === 0) {
+      const eligDate = nextEligible?.eligibility_date
+        ? format(new Date(nextEligible.eligibility_date + "T00:00:00"), "dd/MM/yyyy")
+        : null;
       return (
-        <Alert variant="destructive" className="mb-4 border-2">
+        <Alert variant="destructive" className="mb-4 mt-2 border-2">
           <AlertDescription className="text-base">
-            Você está sem saldo de férias disponível no momento. Caso acredite que deveria ter saldo, por favor entre em contato com o RH para regularizar.
+            Você está sem saldo de férias disponível no momento.
+            {nextEligible && eligDate && (
+              <> O próximo período (ano-base {nextEligible.year}) ficará elegível em <strong>{eligDate}</strong>.</>
+            )}
+            {' '}Caso acredite que deveria ter saldo, entre em contato com o RH.
           </AlertDescription>
         </Alert>
+      );
+    }
+    if (balanceDetails.length > 0) {
+      return (
+        <div className="mt-2 space-y-1">
+          {balanceDetails.map((b) => (
+            <div key={b.year} className="text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">{b.year}:</span> {b.available_days} dia{b.available_days === 1 ? "" : "s"}
+              {b.enjoyment_deadline && (
+                <> — usar até {format(new Date(b.enjoyment_deadline + "T00:00:00"), "dd/MM/yyyy")}</>
+              )}
+            </div>
+          ))}
+        </div>
       );
     }
     return null;
