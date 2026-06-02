@@ -35,13 +35,35 @@ export default function VacationRequest() {
   useEffect(() => {
     const fetchBalanceAndPolicy = async () => {
       if (!user) return;
-      // Buscar saldo de férias
-      const { data: bal } = await supabase
+      const today = format(new Date(), "yyyy-MM-dd");
+
+      // Buscar saldos de férias elegíveis e dentro do prazo de gozo
+      const { data: balances } = await supabase
         .from("vacation_balances")
-        .select("available_days")
+        .select("year, available_days, eligible, enjoyment_deadline, eligibility_date")
         .eq("employee_id", user.id)
-        .maybeSingle();
-      setBalance(bal?.available_days ?? 0);
+        .eq("eligible", true)
+        .gte("enjoyment_deadline", today)
+        .order("year", { ascending: true });
+
+      const valid = (balances ?? []).filter((b: any) => (b.available_days ?? 0) > 0);
+      const total = valid.reduce((s: number, b: any) => s + (b.available_days ?? 0), 0);
+      setBalance(total);
+      setBalanceDetails(valid as any);
+
+      // Se zerado, buscar próximo período que ficará elegível para mensagem clara
+      if (total === 0) {
+        const { data: upcoming } = await supabase
+          .from("vacation_balances")
+          .select("year, eligibility_date")
+          .eq("employee_id", user.id)
+          .eq("eligible", false)
+          .order("eligibility_date", { ascending: true })
+          .limit(1);
+        setNextEligible((upcoming && upcoming[0]) ? (upcoming[0] as any) : null);
+      } else {
+        setNextEligible(null);
+      }
 
       // Buscar política
       const { data: pol } = await supabase
