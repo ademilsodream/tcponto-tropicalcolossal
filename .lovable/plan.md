@@ -1,13 +1,28 @@
 ## Causa raiz
 
-O Resumo Mensal filtra `time_records` apenas por `status = 'active'`, mas no banco existem registros com `status = 'approved'` (dias já validados pelo admin). Em maio/2026, Ademilson tem 22 registros: **15 `active` completos + 6 `approved` completos + 1 `active` incompleto (dia 10, só 2 batidas)**. Os 6 `approved` ficam de fora da consulta, por isso aparece 15 em vez de 21.
+`VacationRequest.tsx` usa `.maybeSingle()` na consulta de `vacation_balances`, mas Ademilson tem 2 registros (2025 e 2026). Isso faz a query falhar e o saldo aparecer como 0, ignorando os 22 dias elegíveis de 2026.
 
 ## Correção
 
-Arquivo: `src/components/EmployeeMonthlySummary.tsx`
+Arquivo: `src/components/VacationRequest.tsx`
 
-1. Trocar o filtro `eq('status','active')` por `in('status', ['active','approved'])` na busca de `time_records`.
-2. Manter a regra "4 batidas" para contar como dia trabalhado (o dia 10 — com apenas clock_in/clock_out — continua não contando, resultando em 21 dias, conforme o usuário espera).
-3. As horas trabalhadas, previstas, extras e almoço passam a refletir também os dias aprovados.
+1. Substituir `.maybeSingle()` por uma query que filtra `eligible = true` e `enjoyment_deadline >= hoje`, ordenada por ano, somando `available_days` de todos os períodos válidos:
+   ```ts
+   const today = format(new Date(), "yyyy-MM-dd");
+   const { data: balances } = await supabase
+     .from("vacation_balances")
+     .select("year, available_days, eligible, enjoyment_deadline")
+     .eq("employee_id", user.id)
+     .eq("eligible", true)
+     .gte("enjoyment_deadline", today)
+     .order("year", { ascending: true });
+   const total = (balances ?? []).reduce((s, b) => s + (b.available_days ?? 0), 0);
+   setBalance(total);
+   setBalanceDetails(balances ?? []);
+   ```
 
-Sem outras mudanças.
+2. Exibir detalhamento por ano abaixo do campo de saldo (ex.: "2026: 22 dias — usar até dd/mm/aaaa").
+
+3. Mensagem mais clara quando não houver período elegível, informando a próxima data de elegibilidade quando existir registro futuro.
+
+Sem alterações em backend, RLS ou tabelas.

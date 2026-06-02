@@ -23,6 +23,8 @@ export default function VacationRequest() {
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [balance, setBalance] = useState<number | null>(null);
+  const [balanceDetails, setBalanceDetails] = useState<Array<{ year: number; available_days: number; enjoyment_deadline: string | null }>>([]);
+  const [nextEligible, setNextEligible] = useState<{ year: number; eligibility_date: string | null } | null>(null);
   const [policy, setPolicy] = useState<VacationPolicy | null>(null);
   const [error, setError] = useState<string>("");
   const [success, setSuccess] = useState<string>("");
