@@ -156,14 +156,39 @@ const EmployeeMonthlySummary: React.FC<EmployeeMonthlySummaryProps> = ({ selecte
       const startDate = format(periodStart, 'yyyy-MM-01');
       const endDate = format(periodEnd, 'yyyy-MM-dd');
 
-      // Carregar configurações do sistema para jornada padrão
+      // Jornada padrão (fallback)
       const { data: systemSettings } = await supabase
         .from('system_settings')
         .select('setting_key, setting_value')
         .eq('setting_key', 'jornada_padrao_horas')
-        .single();
-
+        .maybeSingle();
       const jornadaPadrao = systemSettings ? Number(systemSettings.setting_value) : 8;
+
+      // Turno do funcionário
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('shift_id')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      let schedulesByDow: Record<number, { start: string; end: string; bStart?: string | null; bEnd?: string | null }> = {};
+      if (profileData?.shift_id) {
+        const { data: schedules } = await supabase
+          .from('work_shift_schedules')
+          .select('day_of_week, start_time, end_time, break_start_time, break_end_time, is_active')
+          .eq('shift_id', profileData.shift_id)
+          .eq('is_active', true);
+        (schedules || []).forEach((s: any) => {
+          if (s.start_time && s.end_time) {
+            schedulesByDow[s.day_of_week] = {
+              start: s.start_time,
+              end: s.end_time,
+              bStart: s.break_start_time,
+              bEnd: s.break_end_time,
+            };
+          }
+        });
+      }
 
       const { data: records } = await supabase
         .from('time_records')
@@ -173,25 +198,51 @@ const EmployeeMonthlySummary: React.FC<EmployeeMonthlySummaryProps> = ({ selecte
         .lte('date', endDate)
         .eq('status', 'active');
 
-      // Calcular horas previstas: jornada padrão por dia útil + fins de semana apenas se houver registro
       const today = new Date();
+      today.setHours(0, 0, 0, 0);
       const untilDate = isSameMonth(today, periodStart) ? today : periodEnd;
-      
-      // Contar dias úteis no período
-      const businessDays = countBusinessDays(periodStart, untilDate);
-      
-      // Identificar fins de semana com registros
-      const weekendDaysWithRecords = new Set();
-      (records || []).forEach(record => {
-        const recordDate = new Date(record.date);
-        const dayOfWeek = recordDate.getDay();
-        if (dayOfWeek === 0 || dayOfWeek === 6) { // Domingo ou Sábado
-          weekendDaysWithRecords.add(record.date);
-        }
-      });
 
-      // Calcular horas previstas: dias úteis + fins de semana com registros
-      const plannedHours = (businessDays * jornadaPadrao) + (weekendDaysWithRecords.size * jornadaPadrao);
+      // Helper: duração em horas a partir de strings HH:mm[:ss]
+      const diffHours = (start: string, end: string) => {
+        const [sh, sm] = start.split(':').map(Number);
+        const [eh, em] = end.split(':').map(Number);
+        return Math.max(0, (eh * 60 + em) - (sh * 60 + sm)) / 60;
+      };
+      const scheduleHours = (sch?: { start: string; end: string; bStart?: string | null; bEnd?: string | null }) => {
+        if (!sch) return 0;
+        const work = diffHours(sch.start, sch.end);
+        const brk = sch.bStart && sch.bEnd ? diffHours(sch.bStart, sch.bEnd) : 0;
+        return Math.max(0, work - brk);
+      };
+
+      // Index de registros por data (YYYY-MM-DD)
+      const recordsByDate = new Map<string, any>();
+      (records || []).forEach(r => recordsByDate.set(r.date, r));
+
+      const hasShift = Object.keys(schedulesByDow).length > 0;
+
+      // Calcular horas previstas dia-a-dia
+      let plannedHours = 0;
+      const cursor = new Date(periodStart);
+      cursor.setHours(0, 0, 0, 0);
+      while (cursor <= untilDate) {
+        const dow = cursor.getDay();
+        const dateStr = format(cursor, 'yyyy-MM-dd');
+        if (hasShift) {
+          const sch = schedulesByDow[dow];
+          if (sch) {
+            plannedHours += scheduleHours(sch);
+          } else if (recordsByDate.has(dateStr)) {
+            // Folga trabalhada: usa jornada padrão como referência
+            plannedHours += jornadaPadrao;
+          }
+        } else {
+          // Fallback: comportamento anterior
+          if (dow >= 1 && dow <= 5) plannedHours += jornadaPadrao;
+          else if (recordsByDate.has(dateStr)) plannedHours += jornadaPadrao;
+        }
+        cursor.setDate(cursor.getDate() + 1);
+      }
 
       const initial = {
         totalHours: 0,
@@ -206,30 +257,22 @@ const EmployeeMonthlySummary: React.FC<EmployeeMonthlySummaryProps> = ({ selecte
       } as MonthlySummary;
 
       const result = (records || []).reduce((acc, record) => {
-        // Somar TODAS as horas trabalhadas (sem calcular normal/extras aqui)
         const totalHours = Number(record.total_hours || 0);
         const lunch = getLunchHours(record.lunch_start, record.lunch_end);
-        const hasWorked = totalHours > 0;
-
+        // Dia trabalhado = registro completo (4 batidas)
+        const isComplete = !!(record.clock_in && record.lunch_start && record.lunch_end && record.clock_out);
         return {
           ...acc,
           totalHours: acc.totalHours + totalHours,
-          workingDays: acc.workingDays + (hasWorked ? 1 : 0),
+          workingDays: acc.workingDays + (isComplete ? 1 : 0),
           lunchHours: acc.lunchHours + lunch,
         };
       }, initial);
 
-      // Calcular horas extras: apenas se total trabalhado > previsto
       const overtimeHours = Math.max(0, result.totalHours - result.plannedHours);
       const normalHours = result.totalHours - overtimeHours;
 
-      const finalResult = {
-        ...result,
-        normalHours,
-        overtimeHours,
-      };
-
-      setSummary(finalResult);
+      setSummary({ ...result, normalHours, overtimeHours });
     } catch (error) {
       console.error('Error loading monthly summary:', error);
       setSummary(prev => ({ ...prev, totalHours: 0, normalHours: 0, overtimeHours: 0, workingDays: 0, lunchHours: 0 }));
