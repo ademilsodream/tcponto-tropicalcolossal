@@ -196,7 +196,7 @@ const EmployeeMonthlySummary: React.FC<EmployeeMonthlySummaryProps> = ({ selecte
         .eq('user_id', user.id)
         .gte('date', startDate)
         .lte('date', endDate)
-        .eq('status', 'active');
+        .in('status', ['active', 'approved']);
 
       const today = new Date();
       today.setHours(0, 0, 0, 0);
