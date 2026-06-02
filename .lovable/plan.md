@@ -1,46 +1,33 @@
+
 ## Objetivo
+Corrigir os dados imprecisos do dashboard "Resumo Mensal" (`src/components/EmployeeMonthlySummary.tsx`).
 
-Adicionar um botão no modal "Editar [data]" (Ajuste de Registros) que, ao ser apertado, preenche automaticamente os 4 campos de horário (Entrada, Início Almoço, Fim Almoço, Saída) com os horários oficiais do turno do funcionário para o dia da semana selecionado.
+## Mudanças
 
-## Como vai funcionar
+### 1. Horas previstas — baseadas no turno do funcionário
+- Buscar `shift_id` do funcionário em `profiles`.
+- Buscar todos os registros de `work_shift_schedules` para esse turno (um por `day_of_week` 0–6).
+- Para cada dia do período (do dia 1 até hoje, se for mês atual; senão até o último dia do mês):
+  - Pegar o schedule do `day_of_week` correspondente.
+  - Se houver `start_time` e `end_time`, somar `(end - start) - (break_end - break_start)` em horas.
+  - Se não houver schedule (folga), prever 0h — exceto se houver registro real no dia (mantém comportamento atual de contar fim de semana trabalhado, usando a jornada do dia mais próximo ou jornada padrão como fallback).
+- Fallback: se o funcionário não tiver `shift_id`, usar o cálculo antigo (`jornada_padrao_horas` × dias úteis) para não quebrar.
 
-1. Ao abrir o modal de edição de um dia, o sistema busca o turno (`work_shift`) ativo do funcionário e o respectivo `work_shift_schedule` correspondente ao dia da semana da data selecionada (segunda, terça, etc.).
-2. Um novo botão **"Preencher com horário do turno"** aparece logo acima dos 4 campos de horário (Entrada / Início Almoço / Fim Almoço / Saída).
-3. Ao clicar, os 4 inputs `time` são preenchidos com:
-   - Entrada ← `start_time` do schedule
-   - Início Almoço ← `break_start_time`
-   - Fim Almoço ← `break_end_time`
-   - Saída ← `end_time`
-4. O usuário ainda pode editar os valores manualmente depois.
-5. Caso o funcionário não tenha turno definido, ou não haja schedule para aquele dia da semana (ex.: domingo sem expediente), o botão fica desabilitado e mostra um tooltip/texto explicativo (ex.: "Sem turno configurado para este dia").
+### 2. Dias trabalhados — só dias completos
+Contar o dia apenas quando o registro tem os **4 horários preenchidos**: `clock_in`, `lunch_start`, `lunch_end`, `clock_out`.
 
-## Detalhes técnicos
+### 3. Horas extras — manter total do mês
+`overtime = max(0, totalHours - plannedHours)` (sem mudança).
 
-**Arquivo a modificar:** `src/components/AdjustPreviousDays.tsx`
+### 4. Período até hoje
+Para o mês corrente, somar previstas apenas até o dia atual (já é o comportamento, mas garantir que o último dia inclua o dia de hoje).
 
-1. Adicionar estado `shiftSchedule` (com `start_time`, `break_start_time`, `break_end_time`, `end_time`) e `loadingShift`.
-2. Em `loadTimeRecord(date)`, após carregar o registro, fazer query:
-   - Buscar `profile.shift_id` (já disponível via `useOptimizedAuth`).
-   - Query em `work_shift_schedules` filtrando por `shift_id` e `day_of_week` (0-6, calculado via `date.getDay()`).
-   - Salvar resultado em `shiftSchedule` state. Se não houver, setar como `null`.
-3. Criar handler `handleFillFromShift()`:
-   - Pega `shiftSchedule` e atualiza `editForm` com os 4 horários (formato `HH:mm`, removendo segundos se vierem).
-4. No JSX do modal, adicionar acima do `<div className="grid grid-cols-2 gap-4">` (linha ~680):
-   ```tsx
-   <Button
-     type="button"
-     variant="secondary"
-     onClick={handleFillFromShift}
-     disabled={!shiftSchedule || submitting}
-     className="w-full h-11"
-   >
-     <Clock className="w-4 h-4 mr-2" />
-     Preencher com horário do turno
-   </Button>
-   ```
-5. Resetar `shiftSchedule` em `handleCloseModal`.
+### 5. Parse de datas consistente
+Usar parser explícito para `record.date` (formato ISO `YYYY-MM-DD`) evitando `new Date(string)` para não pegar timezone errado ao identificar `day_of_week` de fins de semana.
 
-## Escopo
+## Arquivos
+- `src/components/EmployeeMonthlySummary.tsx` — única alteração; refatorar `loadMonthlySummary` para buscar turno e calcular previstas por dia, e ajustar contagem de `workingDays`.
 
-- Apenas mudança de UI/comportamento no modal de Ajuste de Registros.
-- Sem alterações em backend, schema ou outras telas.
+## Fora do escopo
+- Não tratar feriados nem férias/faltas (não solicitado).
+- Não alterar UI/layout, apenas os cálculos.
