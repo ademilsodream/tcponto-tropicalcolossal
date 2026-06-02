@@ -23,6 +23,8 @@ export default function VacationRequest() {
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [balance, setBalance] = useState<number | null>(null);
+  const [balanceDetails, setBalanceDetails] = useState<Array<{ year: number; available_days: number; enjoyment_deadline: string | null }>>([]);
+  const [nextEligible, setNextEligible] = useState<{ year: number; eligibility_date: string | null } | null>(null);
   const [policy, setPolicy] = useState<VacationPolicy | null>(null);
   const [error, setError] = useState<string>("");
   const [success, setSuccess] = useState<string>("");
@@ -33,13 +35,35 @@ export default function VacationRequest() {
   useEffect(() => {
     const fetchBalanceAndPolicy = async () => {
       if (!user) return;
-      // Buscar saldo de férias
-      const { data: bal } = await supabase
+      const today = format(new Date(), "yyyy-MM-dd");
+
+      // Buscar saldos de férias elegíveis e dentro do prazo de gozo
+      const { data: balances } = await supabase
         .from("vacation_balances")
-        .select("available_days")
+        .select("year, available_days, eligible, enjoyment_deadline, eligibility_date")
         .eq("employee_id", user.id)
-        .maybeSingle();
-      setBalance(bal?.available_days ?? 0);
+        .eq("eligible", true)
+        .gte("enjoyment_deadline", today)
+        .order("year", { ascending: true });
+
+      const valid = (balances ?? []).filter((b: any) => (b.available_days ?? 0) > 0);
+      const total = valid.reduce((s: number, b: any) => s + (b.available_days ?? 0), 0);
+      setBalance(total);
+      setBalanceDetails(valid as any);
+
+      // Se zerado, buscar próximo período que ficará elegível para mensagem clara
+      if (total === 0) {
+        const { data: upcoming } = await supabase
+          .from("vacation_balances")
+          .select("year, eligibility_date")
+          .eq("employee_id", user.id)
+          .eq("eligible", false)
+          .order("eligibility_date", { ascending: true })
+          .limit(1);
+        setNextEligible((upcoming && upcoming[0]) ? (upcoming[0] as any) : null);
+      } else {
+        setNextEligible(null);
+      }
 
       // Buscar política
       const { data: pol } = await supabase
@@ -138,18 +162,37 @@ export default function VacationRequest() {
     return date ? format(date, "dd/MM/yyyy") : <span className="text-muted-foreground">{placeholder}</span>;
   }
 
-  // Nova mensagem de orientação se saldo for 0
+  // Detalhamento por ano + mensagem se saldo for 0
   const renderBalanceHint = () => {
-    if (balance === null) {
-      return null;
-    }
+    if (balance === null) return null;
     if (balance === 0) {
+      const eligDate = nextEligible?.eligibility_date
+        ? format(new Date(nextEligible.eligibility_date + "T00:00:00"), "dd/MM/yyyy")
+        : null;
       return (
-        <Alert variant="destructive" className="mb-4 border-2">
+        <Alert variant="destructive" className="mb-4 mt-2 border-2">
           <AlertDescription className="text-base">
-            Você está sem saldo de férias disponível no momento. Caso acredite que deveria ter saldo, por favor entre em contato com o RH para regularizar.
+            Você está sem saldo de férias disponível no momento.
+            {nextEligible && eligDate && (
+              <> O próximo período (ano-base {nextEligible.year}) ficará elegível em <strong>{eligDate}</strong>.</>
+            )}
+            {' '}Caso acredite que deveria ter saldo, entre em contato com o RH.
           </AlertDescription>
         </Alert>
+      );
+    }
+    if (balanceDetails.length > 0) {
+      return (
+        <div className="mt-2 space-y-1">
+          {balanceDetails.map((b) => (
+            <div key={b.year} className="text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">{b.year}:</span> {b.available_days} dia{b.available_days === 1 ? "" : "s"}
+              {b.enjoyment_deadline && (
+                <> — usar até {format(new Date(b.enjoyment_deadline + "T00:00:00"), "dd/MM/yyyy")}</>
+              )}
+            </div>
+          ))}
+        </div>
       );
     }
     return null;
