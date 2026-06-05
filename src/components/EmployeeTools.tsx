@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useOptimizedAuth } from '@/contexts/OptimizedAuthContext';
-import { Wrench, QrCode, Loader2, MapPin } from 'lucide-react';
+import { Wrench, QrCode, Loader2, MapPin, Undo2, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -48,20 +49,76 @@ export default function EmployeeTools() {
     refetch,
     findToolByPatrimonio,
     registerToolMovement,
+    registerToolReturn,
+    registerBulkToolReturn,
   } = useEmployeeTools(employeeId);
 
   const [scannerOpen, setScannerOpen] = useState(false);
   const [transferOpen, setTransferOpen] = useState(false);
+  const [returnOpen, setReturnOpen] = useState(false);
   const [selectedTool, setSelectedTool] = useState<EmployeeTool | null>(null);
+  const [returnTools, setReturnTools] = useState<EmployeeTool[]>([]);
   const [selectedObraId, setSelectedObraId] = useState('');
   const [observacoes, setObservacoes] = useState('');
+  const [returnObservacoes, setReturnObservacoes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [lookingUp, setLookingUp] = useState(false);
+  const [bulkMode, setBulkMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const toolsEmObra = useMemo(
+    () => tools.filter((t) => t.estado === 'em_obra'),
+    [tools]
+  );
+
+  const isBulkReturn = returnTools.length > 1;
 
   const resetTransferForm = () => {
     setSelectedTool(null);
     setSelectedObraId('');
     setObservacoes('');
+  };
+
+  const resetReturnForm = () => {
+    setReturnTools([]);
+    setReturnObservacoes('');
+  };
+
+  const exitBulkMode = () => {
+    setBulkMode(false);
+    setSelectedIds(new Set());
+  };
+
+  const toggleToolSelection = (toolId: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(toolId)) {
+        next.delete(toolId);
+      } else {
+        next.add(toolId);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedIds(new Set(toolsEmObra.map((t) => t.id)));
+    } else {
+      setSelectedIds(new Set());
+    }
+  };
+
+  const openSingleReturn = (tool: EmployeeTool) => {
+    setReturnTools([tool]);
+    setReturnOpen(true);
+  };
+
+  const openBulkReturn = () => {
+    const selected = tools.filter((t) => selectedIds.has(t.id));
+    if (selected.length === 0) return;
+    setReturnTools(selected);
+    setReturnOpen(true);
   };
 
   const handleQrScan = async (codigo: string) => {
@@ -145,25 +202,93 @@ export default function EmployeeTools() {
     }
   };
 
+  const handleConfirmReturn = async () => {
+    if (returnTools.length === 0 || !employeeId) return;
+
+    setSubmitting(true);
+    try {
+      if (isBulkReturn) {
+        const count = await registerBulkToolReturn({
+          tools: returnTools,
+          funcionarioId: employeeId,
+          funcionarioNome,
+          observacoes: returnObservacoes.trim() || undefined,
+        });
+
+        toast({
+          title: 'Devolução em massa registrada',
+          description: `${count} ferramenta(s) devolvida(s) com sucesso.`,
+        });
+
+        exitBulkMode();
+      } else {
+        await registerToolReturn({
+          tool: returnTools[0],
+          funcionarioId: employeeId,
+          funcionarioNome,
+          observacoes: returnObservacoes.trim() || undefined,
+        });
+
+        toast({
+          title: 'Devolução registrada',
+          description: `${returnTools[0].nome} foi devolvida com sucesso.`,
+        });
+      }
+
+      setReturnOpen(false);
+      resetReturnForm();
+      refetch();
+    } catch (err) {
+      toast({
+        title: 'Erro ao devolver',
+        description: err instanceof Error ? err.message : 'Tente novamente.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const allSelected =
+    toolsEmObra.length > 0 && selectedIds.size === toolsEmObra.length;
+
   return (
-    <div className="max-w-2xl mx-auto p-4 space-y-4">
-      <div className="flex items-center justify-between gap-3">
+    <div className="max-w-2xl mx-auto p-4 space-y-4 pb-24">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
           <Wrench className="h-6 w-6 text-blue-600" />
           <h1 className="text-xl font-bold">Ferramentas</h1>
         </div>
-        <Button
-          onClick={() => setScannerOpen(true)}
-          disabled={lookingUp}
-          className="gap-2"
-        >
-          {lookingUp ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <QrCode className="h-4 w-4" />
+        <div className="flex items-center gap-2 flex-wrap">
+          {!bulkMode && toolsEmObra.length > 0 && (
+            <Button
+              variant="outline"
+              onClick={() => setBulkMode(true)}
+              className="gap-2"
+            >
+              <Undo2 className="h-4 w-4" />
+              Devolução em massa
+            </Button>
           )}
-          Ler QR Code
-        </Button>
+          {bulkMode && (
+            <Button variant="outline" onClick={exitBulkMode} className="gap-2">
+              <X className="h-4 w-4" />
+              Cancelar seleção
+            </Button>
+          )}
+          <Button
+            onClick={() => setScannerOpen(true)}
+            disabled={lookingUp}
+            className="gap-2"
+          >
+            {lookingUp ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <QrCode className="h-4 w-4" />
+            )}
+            Ler QR Code
+          </Button>
+        </div>
       </div>
 
       {loading && (
@@ -190,36 +315,88 @@ export default function EmployeeTools() {
 
       {!loading && tools.length > 0 && (
         <div className="space-y-3">
+          {bulkMode && toolsEmObra.length > 0 && (
+            <div className="flex items-center gap-2 px-1">
+              <Checkbox
+                id="select-all"
+                checked={allSelected}
+                onCheckedChange={(checked) => toggleSelectAll(checked === true)}
+              />
+              <Label htmlFor="select-all" className="text-sm cursor-pointer">
+                Selecionar todas ({toolsEmObra.length})
+              </Label>
+            </div>
+          )}
+
           {tools.map((tool) => (
             <Card key={tool.id}>
               <CardHeader className="pb-2">
-                <div className="flex items-start justify-between gap-2">
-                  <CardTitle className="text-base">{tool.nome}</CardTitle>
-                  <Badge variant={estadoVariant[tool.estado] ?? 'secondary'}>
-                    {estadoLabel[tool.estado] ?? tool.estado}
-                  </Badge>
+                <div className="flex items-start gap-3">
+                  {bulkMode && tool.estado === 'em_obra' && (
+                    <Checkbox
+                      checked={selectedIds.has(tool.id)}
+                      onCheckedChange={() => toggleToolSelection(tool.id)}
+                      className="mt-1"
+                    />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <CardTitle className="text-base">{tool.nome}</CardTitle>
+                      <Badge variant={estadoVariant[tool.estado] ?? 'secondary'}>
+                        {estadoLabel[tool.estado] ?? tool.estado}
+                      </Badge>
+                    </div>
+                  </div>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-1 text-sm text-muted-foreground">
-                <p>
-                  <span className="font-medium text-foreground">Patrimônio:</span>{' '}
-                  {tool.numero_patrimonio}
-                </p>
-                {tool.modelo && (
+              <CardContent className="space-y-3 text-sm text-muted-foreground">
+                <div className="space-y-1">
                   <p>
-                    <span className="font-medium text-foreground">Modelo:</span>{' '}
-                    {tool.modelo}
+                    <span className="font-medium text-foreground">Patrimônio:</span>{' '}
+                    {tool.numero_patrimonio}
                   </p>
-                )}
-                {tool.obra?.nome && (
-                  <p className="flex items-center gap-1">
-                    <MapPin className="h-3.5 w-3.5" />
-                    {tool.obra.nome}
-                  </p>
+                  {tool.modelo && (
+                    <p>
+                      <span className="font-medium text-foreground">Modelo:</span>{' '}
+                      {tool.modelo}
+                    </p>
+                  )}
+                  {tool.obra?.nome && (
+                    <p className="flex items-center gap-1">
+                      <MapPin className="h-3.5 w-3.5" />
+                      {tool.obra.nome}
+                    </p>
+                  )}
+                </div>
+
+                {!bulkMode && tool.estado === 'em_obra' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => openSingleReturn(tool)}
+                  >
+                    <Undo2 className="h-4 w-4" />
+                    Devolver
+                  </Button>
                 )}
               </CardContent>
             </Card>
           ))}
+        </div>
+      )}
+
+      {bulkMode && selectedIds.size > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t shadow-lg z-50">
+          <div className="max-w-2xl mx-auto flex items-center justify-between gap-3">
+            <p className="text-sm font-medium">
+              {selectedIds.size} ferramenta(s) selecionada(s)
+            </p>
+            <Button onClick={openBulkReturn} className="gap-2">
+              <Undo2 className="h-4 w-4" />
+              Devolver selecionadas
+            </Button>
+          </div>
         </div>
       )}
 
@@ -307,6 +484,88 @@ export default function EmployeeTools() {
                 </>
               ) : (
                 'Confirmar'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={returnOpen}
+        onOpenChange={(open) => {
+          setReturnOpen(open);
+          if (!open) resetReturnForm();
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {isBulkReturn ? 'Confirmar devolução em massa' : 'Confirmar devolução'}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {isBulkReturn ? (
+              <div className="rounded-lg border p-3 text-sm space-y-2 max-h-48 overflow-y-auto">
+                {returnTools.map((tool) => (
+                  <div key={tool.id} className="flex justify-between gap-2">
+                    <span className="font-medium">{tool.nome}</span>
+                    <span className="text-muted-foreground shrink-0">
+                      {tool.numero_patrimonio}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              returnTools[0] && (
+                <div className="rounded-lg border p-3 text-sm space-y-1">
+                  <p className="font-medium">{returnTools[0].nome}</p>
+                  <p className="text-muted-foreground">
+                    Patrimônio: {returnTools[0].numero_patrimonio}
+                  </p>
+                  {returnTools[0].obra?.nome && (
+                    <p className="text-muted-foreground flex items-center gap-1">
+                      <MapPin className="h-3.5 w-3.5" />
+                      Obra: {returnTools[0].obra.nome}
+                    </p>
+                  )}
+                </div>
+              )
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="return-observacoes">Observações (opcional)</Label>
+              <Textarea
+                id="return-observacoes"
+                value={returnObservacoes}
+                onChange={(e) => setReturnObservacoes(e.target.value)}
+                placeholder="Informações adicionais..."
+                rows={3}
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setReturnOpen(false);
+                resetReturnForm();
+              }}
+              disabled={submitting}
+            >
+              Cancelar
+            </Button>
+            <Button onClick={handleConfirmReturn} disabled={submitting}>
+              {submitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Devolvendo...
+                </>
+              ) : isBulkReturn ? (
+                `Devolver ${returnTools.length} ferramenta(s)`
+              ) : (
+                'Confirmar devolução'
               )}
             </Button>
           </DialogFooter>

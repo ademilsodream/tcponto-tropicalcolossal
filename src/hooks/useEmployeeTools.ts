@@ -179,6 +179,123 @@ export function useEmployeeTools(employeeId: string | undefined | null) {
     [obras]
   );
 
+  const resolveObraNome = useCallback(
+    async (obraId: string | null, tool?: EmployeeTool) => {
+      if (!obraId) return null;
+      if (tool?.obra?.nome) return tool.obra.nome;
+      const obraAtual = obras.find((o) => o.id === obraId);
+      if (obraAtual?.nome) return obraAtual.nome;
+      const { data: obraData } = await supabase
+        .from('obras')
+        .select('nome')
+        .eq('id', obraId)
+        .maybeSingle();
+      return obraData?.nome ?? null;
+    },
+    [obras]
+  );
+
+  const returnSingleTool = useCallback(
+    async ({
+      tool,
+      funcionarioId,
+      funcionarioNome,
+      observacoes,
+    }: {
+      tool: EmployeeTool;
+      funcionarioId: string;
+      funcionarioNome: string;
+      observacoes?: string;
+    }) => {
+      if (tool.funcionario_atual_id !== funcionarioId) {
+        throw new Error(
+          `A ferramenta "${tool.nome}" não pertence a você.`
+        );
+      }
+
+      if (tool.estado !== 'em_obra') {
+        throw new Error(
+          `A ferramenta "${tool.nome}" já está disponível.`
+        );
+      }
+
+      const obraAnteriorNome = await resolveObraNome(tool.obra_atual_id, tool);
+
+      const { error: movimentoError } = await supabase
+        .from('patrimonios_ferramentas_movimentos')
+        .insert({
+          ferramenta_id: tool.id,
+          tipo: 'devolucao',
+          funcionario_id: funcionarioId,
+          funcionario_nome: funcionarioNome,
+          obra_id: null,
+          obra_nome: null,
+          funcionario_anterior_id: tool.funcionario_atual_id,
+          funcionario_anterior_nome: tool.funcionario_atual_nome,
+          obra_anterior_id: tool.obra_atual_id,
+          obra_anterior_nome: obraAnteriorNome,
+          observacoes: observacoes || null,
+          created_by: funcionarioId,
+        });
+
+      if (movimentoError) {
+        throw new Error(`Erro ao registrar devolução de "${tool.nome}".`);
+      }
+
+      const { error: updateError } = await supabase
+        .from('patrimonios_ferramentas')
+        .update({
+          funcionario_atual_id: null,
+          funcionario_atual_nome: null,
+          obra_atual_id: null,
+          estado: 'disponivel',
+        })
+        .eq('id', tool.id);
+
+      if (updateError) {
+        throw new Error(`Erro ao atualizar "${tool.nome}" após devolução.`);
+      }
+    },
+    [resolveObraNome]
+  );
+
+  const registerToolReturn = useCallback(
+    async ({
+      tool,
+      funcionarioId,
+      funcionarioNome,
+      observacoes,
+    }: {
+      tool: EmployeeTool;
+      funcionarioId: string;
+      funcionarioNome: string;
+      observacoes?: string;
+    }) => {
+      await returnSingleTool({ tool, funcionarioId, funcionarioNome, observacoes });
+    },
+    [returnSingleTool]
+  );
+
+  const registerBulkToolReturn = useCallback(
+    async ({
+      tools: toolsToReturn,
+      funcionarioId,
+      funcionarioNome,
+      observacoes,
+    }: {
+      tools: EmployeeTool[];
+      funcionarioId: string;
+      funcionarioNome: string;
+      observacoes?: string;
+    }) => {
+      for (const tool of toolsToReturn) {
+        await returnSingleTool({ tool, funcionarioId, funcionarioNome, observacoes });
+      }
+      return toolsToReturn.length;
+    },
+    [returnSingleTool]
+  );
+
   return {
     tools,
     obras,
@@ -187,5 +304,7 @@ export function useEmployeeTools(employeeId: string | undefined | null) {
     refetch: fetchTools,
     findToolByPatrimonio,
     registerToolMovement,
+    registerToolReturn,
+    registerBulkToolReturn,
   };
 }
