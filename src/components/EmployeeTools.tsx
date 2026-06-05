@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
@@ -65,9 +64,6 @@ export default function EmployeeTools() {
   const [selectedObraId, setSelectedObraId] = useState('');
   const [selectedDestEmployeeId, setSelectedDestEmployeeId] = useState('');
   const [employeeTransferObraId, setEmployeeTransferObraId] = useState('');
-  const [observacoes, setObservacoes] = useState('');
-  const [returnObservacoes, setReturnObservacoes] = useState('');
-  const [employeeTransferObservacoes, setEmployeeTransferObservacoes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [lookingUp, setLookingUp] = useState(false);
   const [bulkMode, setBulkMode] = useState(false);
@@ -80,27 +76,29 @@ export default function EmployeeTools() {
 
   const isBulkReturn = returnTools.length > 1;
 
+  const getValidObraPrefill = (obraAtualId: string | null) => {
+    if (!obraAtualId) return '';
+    return obras.some((o) => o.id === obraAtualId) ? obraAtualId : '';
+  };
+
   const resetTransferForm = () => {
     setSelectedTool(null);
     setSelectedObraId('');
-    setObservacoes('');
   };
 
   const resetReturnForm = () => {
     setReturnTools([]);
-    setReturnObservacoes('');
   };
 
   const resetEmployeeTransferForm = () => {
     setEmployeeTransferTool(null);
     setSelectedDestEmployeeId('');
     setEmployeeTransferObraId('');
-    setEmployeeTransferObservacoes('');
   };
 
   const openEmployeeTransfer = (tool: EmployeeTool) => {
     setEmployeeTransferTool(tool);
-    setEmployeeTransferObraId(tool.obra_atual_id ?? '');
+    setEmployeeTransferObraId(getValidObraPrefill(tool.obra_atual_id));
     setEmployeeTransferOpen(true);
   };
 
@@ -167,6 +165,7 @@ export default function EmployeeTools() {
       }
 
       setSelectedTool(tool);
+      setSelectedObraId(getValidObraPrefill(tool.obra_atual_id));
       setTransferOpen(true);
     } catch {
       toast({
@@ -200,7 +199,6 @@ export default function EmployeeTools() {
         obraNome: obra.nome,
         funcionarioId: employeeId,
         funcionarioNome,
-        observacoes: observacoes.trim() || undefined,
       });
 
       toast({
@@ -258,7 +256,6 @@ export default function EmployeeTools() {
         obraNome: obra.nome,
         currentFuncionarioId: employeeId,
         currentFuncionarioNome: funcionarioNome,
-        observacoes: employeeTransferObservacoes.trim() || undefined,
       });
 
       toast({
@@ -290,7 +287,6 @@ export default function EmployeeTools() {
           tools: returnTools,
           funcionarioId: employeeId,
           funcionarioNome,
-          observacoes: returnObservacoes.trim() || undefined,
         });
 
         toast({
@@ -304,7 +300,6 @@ export default function EmployeeTools() {
           tool: returnTools[0],
           funcionarioId: employeeId,
           funcionarioNome,
-          observacoes: returnObservacoes.trim() || undefined,
         });
 
         toast({
@@ -537,17 +532,6 @@ export default function EmployeeTools() {
                   </SelectContent>
                 </Select>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="observacoes">Observações (opcional)</Label>
-                <Textarea
-                  id="observacoes"
-                  value={observacoes}
-                  onChange={(e) => setObservacoes(e.target.value)}
-                  placeholder="Informações adicionais..."
-                  rows={3}
-                />
-              </div>
             </div>
           )}
 
@@ -645,17 +629,6 @@ export default function EmployeeTools() {
                   </SelectContent>
                 </Select>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="employee-transfer-observacoes">Observações (opcional)</Label>
-                <Textarea
-                  id="employee-transfer-observacoes"
-                  value={employeeTransferObservacoes}
-                  onChange={(e) => setEmployeeTransferObservacoes(e.target.value)}
-                  placeholder="Informações adicionais..."
-                  rows={3}
-                />
-              </div>
             </div>
           )}
 
@@ -733,17 +706,6 @@ export default function EmployeeTools() {
                 </div>
               )
             )}
-
-            <div className="space-y-2">
-              <Label htmlFor="return-observacoes">Observações (opcional)</Label>
-              <Textarea
-                id="return-observacoes"
-                value={returnObservacoes}
-                onChange={(e) => setReturnObservacoes(e.target.value)}
-                placeholder="Informações adicionais..."
-                rows={3}
-              />
-            </div>
           </div>
 
           <DialogFooter className="gap-2">

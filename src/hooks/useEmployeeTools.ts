@@ -71,6 +71,7 @@ export function useEmployeeTools(employeeId: string | undefined | null) {
     const { data, error: fetchError } = await supabase
       .from('obras')
       .select('id, nome, codigo, status')
+      .eq('status', 'em_andamento')
       .order('nome');
 
     if (fetchError) {
@@ -88,7 +89,7 @@ export function useEmployeeTools(employeeId: string | undefined | null) {
       .from('profiles')
       .select('id, name, employee_code')
       .eq('role', 'user')
-      .or('status.is.null,status.eq.active')
+      .eq('status', 'active')
       .neq('id', employeeId)
       .order('name');
 
@@ -128,14 +129,12 @@ export function useEmployeeTools(employeeId: string | undefined | null) {
       obraNome,
       funcionarioId,
       funcionarioNome,
-      observacoes,
     }: {
       tool: EmployeeTool;
       obraId: string;
       obraNome: string;
       funcionarioId: string;
       funcionarioNome: string;
-      observacoes?: string;
     }) => {
       if (
         tool.funcionario_atual_id &&
@@ -181,7 +180,6 @@ export function useEmployeeTools(employeeId: string | undefined | null) {
           obra_anterior_id: tool.obra_atual_id,
           obra_anterior_nome: obraAnteriorNome,
           transferencia_escopo: isTransfer ? 'obra' : null,
-          observacoes: observacoes || null,
           created_by: funcionarioId,
         });
 
@@ -227,12 +225,10 @@ export function useEmployeeTools(employeeId: string | undefined | null) {
       tool,
       funcionarioId,
       funcionarioNome,
-      observacoes,
     }: {
       tool: EmployeeTool;
       funcionarioId: string;
       funcionarioNome: string;
-      observacoes?: string;
     }) => {
       if (tool.funcionario_atual_id !== funcionarioId) {
         throw new Error(
@@ -261,7 +257,6 @@ export function useEmployeeTools(employeeId: string | undefined | null) {
           funcionario_anterior_nome: tool.funcionario_atual_nome,
           obra_anterior_id: tool.obra_atual_id,
           obra_anterior_nome: obraAnteriorNome,
-          observacoes: observacoes || null,
           created_by: funcionarioId,
         });
 
@@ -291,14 +286,12 @@ export function useEmployeeTools(employeeId: string | undefined | null) {
       tool,
       funcionarioId,
       funcionarioNome,
-      observacoes,
     }: {
       tool: EmployeeTool;
       funcionarioId: string;
       funcionarioNome: string;
-      observacoes?: string;
     }) => {
-      await returnSingleTool({ tool, funcionarioId, funcionarioNome, observacoes });
+      await returnSingleTool({ tool, funcionarioId, funcionarioNome });
     },
     [returnSingleTool]
   );
@@ -308,15 +301,13 @@ export function useEmployeeTools(employeeId: string | undefined | null) {
       tools: toolsToReturn,
       funcionarioId,
       funcionarioNome,
-      observacoes,
     }: {
       tools: EmployeeTool[];
       funcionarioId: string;
       funcionarioNome: string;
-      observacoes?: string;
     }) => {
       for (const tool of toolsToReturn) {
-        await returnSingleTool({ tool, funcionarioId, funcionarioNome, observacoes });
+        await returnSingleTool({ tool, funcionarioId, funcionarioNome });
       }
       return toolsToReturn.length;
     },
@@ -332,7 +323,6 @@ export function useEmployeeTools(employeeId: string | undefined | null) {
       obraNome,
       currentFuncionarioId,
       currentFuncionarioNome,
-      observacoes,
     }: {
       tool: EmployeeTool;
       destFuncionarioId: string;
@@ -341,7 +331,6 @@ export function useEmployeeTools(employeeId: string | undefined | null) {
       obraNome: string;
       currentFuncionarioId: string;
       currentFuncionarioNome: string;
-      observacoes?: string;
     }) => {
       if (tool.funcionario_atual_id !== currentFuncionarioId) {
         throw new Error(
@@ -381,7 +370,6 @@ export function useEmployeeTools(employeeId: string | undefined | null) {
           obra_anterior_id: tool.obra_atual_id,
           obra_anterior_nome: obraAnteriorNome,
           transferencia_escopo: transferenciaEscopo,
-          observacoes: observacoes || null,
           created_by: currentFuncionarioId,
         });
 
