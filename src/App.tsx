@@ -21,6 +21,7 @@ import VacationRequest from '@/components/VacationRequest';
 import EmployeeDocuments from '@/components/EmployeeDocuments';
 import SalaryAdvanceRequest from '@/components/SalaryAdvanceRequest';
 import EmployeeProfile from '@/components/EmployeeProfile';
+import EmployeeTools from '@/components/EmployeeTools';
 
 function App() {
   return (
@@ -101,6 +102,16 @@ function App() {
                     <ProtectedRoute>
                       <EmployeeLayout>
                         <EmployeeDocuments />
+                      </EmployeeLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/tools"
+                  element={
+                    <ProtectedRoute>
+                      <EmployeeLayout>
+                        <EmployeeTools />
                       </EmployeeLayout>
                     </ProtectedRoute>
                   }

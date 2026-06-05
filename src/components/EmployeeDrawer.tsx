@@ -2,7 +2,7 @@
 import * as React from 'react';
 import { Drawer, DrawerContent, DrawerTrigger, DrawerClose } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
-import { Menu, Clock, BarChart3, FileText, Edit, LogOut, Loader2, Folder, DollarSign, User } from 'lucide-react';
+import { Menu, Clock, BarChart3, FileText, Edit, LogOut, Loader2, Folder, DollarSign, User, Wrench } from 'lucide-react';
 import { useOptimizedAuth } from '@/contexts/OptimizedAuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -47,6 +47,7 @@ const EmployeeDrawer: React.FC<EmployeeDrawerProps> = ({ activeScreen, onScreenC
     { key: 'adjustPreviousDays', label: 'Ajustar Registros', icon: Edit, path: '/adjust-previous-days' },
     { key: 'vacationRequest', label: 'Férias', icon: FileText, path: '/vacation-request' },
     { key: 'documents', label: 'Documentos', icon: Folder, path: '/documents' },
+    { key: 'tools', label: 'Ferramentas', icon: Wrench, path: '/tools' },
     { key: 'salaryAdvance', label: 'Vale Salarial', icon: DollarSign, path: '/salary-advance' },
     { key: 'profile', label: 'Meu Perfil', icon: User, path: '/profile' },
   ] as const;

@@ -3098,6 +3098,141 @@ export type Database = {
           },
         ]
       }
+      patrimonios_ferramentas: {
+        Row: {
+          id: string
+          numero_patrimonio: string
+          nome: string
+          numero_serie: string | null
+          modelo: string | null
+          foto_url: string | null
+          estado: string
+          funcionario_atual_id: string | null
+          funcionario_atual_nome: string | null
+          obra_atual_id: string | null
+          observacoes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          numero_patrimonio: string
+          nome: string
+          numero_serie?: string | null
+          modelo?: string | null
+          foto_url?: string | null
+          estado?: string
+          funcionario_atual_id?: string | null
+          funcionario_atual_nome?: string | null
+          obra_atual_id?: string | null
+          observacoes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          numero_patrimonio?: string
+          nome?: string
+          numero_serie?: string | null
+          modelo?: string | null
+          foto_url?: string | null
+          estado?: string
+          funcionario_atual_id?: string | null
+          funcionario_atual_nome?: string | null
+          obra_atual_id?: string | null
+          observacoes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patrimonios_ferramentas_obra_atual_id_fkey"
+            columns: ["obra_atual_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patrimonios_ferramentas_movimentos: {
+        Row: {
+          id: string
+          ferramenta_id: string
+          tipo: string
+          funcionario_id: string | null
+          funcionario_nome: string | null
+          obra_id: string | null
+          obra_nome: string | null
+          observacoes: string | null
+          data_movimento: string
+          created_by: string | null
+          created_at: string
+          funcionario_anterior_id: string | null
+          funcionario_anterior_nome: string | null
+          obra_anterior_id: string | null
+          obra_anterior_nome: string | null
+          transferencia_escopo: string | null
+        }
+        Insert: {
+          id?: string
+          ferramenta_id: string
+          tipo: string
+          funcionario_id?: string | null
+          funcionario_nome?: string | null
+          obra_id?: string | null
+          obra_nome?: string | null
+          observacoes?: string | null
+          data_movimento?: string
+          created_by?: string | null
+          created_at?: string
+          funcionario_anterior_id?: string | null
+          funcionario_anterior_nome?: string | null
+          obra_anterior_id?: string | null
+          obra_anterior_nome?: string | null
+          transferencia_escopo?: string | null
+        }
+        Update: {
+          id?: string
+          ferramenta_id?: string
+          tipo?: string
+          funcionario_id?: string | null
+          funcionario_nome?: string | null
+          obra_id?: string | null
+          obra_nome?: string | null
+          observacoes?: string | null
+          data_movimento?: string
+          created_by?: string | null
+          created_at?: string
+          funcionario_anterior_id?: string | null
+          funcionario_anterior_nome?: string | null
+          obra_anterior_id?: string | null
+          obra_anterior_nome?: string | null
+          transferencia_escopo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patrimonios_ferramentas_movimentos_ferramenta_id_fkey"
+            columns: ["ferramenta_id"]
+            isOneToOne: false
+            referencedRelation: "patrimonios_ferramentas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patrimonios_ferramentas_movimentos_obra_anterior_id_fkey"
+            columns: ["obra_anterior_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patrimonios_ferramentas_movimentos_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patrimonios_veiculos: {
         Row: {
           ano: number | null
