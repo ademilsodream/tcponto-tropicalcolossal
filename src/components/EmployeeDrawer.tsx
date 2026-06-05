@@ -15,6 +15,7 @@ interface EmployeeDrawerProps {
 
 const EmployeeDrawer: React.FC<EmployeeDrawerProps> = ({ activeScreen, onScreenChange }) => {
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
+  const { profile } = useOptimizedAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -52,11 +53,20 @@ const EmployeeDrawer: React.FC<EmployeeDrawerProps> = ({ activeScreen, onScreenC
     { key: 'profile', label: 'Meu Perfil', icon: User, path: '/profile' },
   ] as const;
 
+  const visibleMenuItems = React.useMemo(() => {
+    return menuItems.filter((item) => {
+      if (item.key === 'vacationRequest') {
+        return profile?.contratado === true;
+      }
+      return true;
+    });
+  }, [profile?.contratado]);
+
   // Derivar active pela rota atual se não houver prop
   const activeByPath = React.useMemo(() => {
-    const found = menuItems.find(item => item.path === location.pathname);
+    const found = visibleMenuItems.find(item => item.path === location.pathname);
     return found?.key || 'timeRegistration';
-  }, [location.pathname]);
+  }, [location.pathname, visibleMenuItems]);
 
   const resolvedActive = activeScreen || activeByPath;
 
@@ -91,7 +101,7 @@ const EmployeeDrawer: React.FC<EmployeeDrawerProps> = ({ activeScreen, onScreenC
 
           <nav className="flex-1">
             <ul className="space-y-2">
-              {menuItems.map((item) => {
+              {visibleMenuItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = resolvedActive === item.key;
                 return (

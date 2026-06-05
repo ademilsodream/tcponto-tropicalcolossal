@@ -17,6 +17,7 @@ interface Profile {
   job_function_id?: string;
   can_register_time: boolean;
   use_location_tracking: boolean;
+  contratado?: boolean | null;
   departments?: { id: string; name: string };
   job_functions?: { id: string; name: string };
 }
@@ -86,6 +87,7 @@ export const OptimizedAuthProvider: React.FC<{ children: ReactNode }> = ({ child
           job_function_id,
           can_register_time,
           use_location_tracking,
+          contratado,
           departments:department_id(id, name),
           job_functions:job_function_id(id, name)
         `)

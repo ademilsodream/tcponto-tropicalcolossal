@@ -11,6 +11,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
+import { useNavigate } from "react-router-dom";
 
 interface VacationPolicy {
   min_period_days: number;
@@ -20,6 +21,7 @@ interface VacationPolicy {
 
 export default function VacationRequest() {
   const { user, profile } = useOptimizedAuth();
+  const navigate = useNavigate();
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [balance, setBalance] = useState<number | null>(null);
@@ -31,6 +33,17 @@ export default function VacationRequest() {
   const [isLoading, setIsLoading] = useState(false);
 
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (profile && profile.contratado !== true) {
+      toast({
+        title: "Acesso indisponível",
+        description: "Solicitação de férias não está disponível para o seu perfil.",
+        variant: "destructive",
+      });
+      navigate("/", { replace: true });
+    }
+  }, [profile, navigate, toast]);
 
   useEffect(() => {
     const fetchBalanceAndPolicy = async () => {
