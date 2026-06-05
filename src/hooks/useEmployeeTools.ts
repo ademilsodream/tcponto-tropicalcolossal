@@ -23,6 +23,12 @@ export interface Obra {
   status: string;
 }
 
+export interface EmployeeOption {
+  id: string;
+  name: string;
+  employee_code: string | null;
+}
+
 export function parsePatrimonioFromQr(raw: string): string {
   const trimmed = raw.trim();
   if (!trimmed) return trimmed;
@@ -36,6 +42,7 @@ export function parsePatrimonioFromQr(raw: string): string {
 export function useEmployeeTools(employeeId: string | undefined | null) {
   const [tools, setTools] = useState<EmployeeTool[]>([]);
   const [obras, setObras] = useState<Obra[]>([]);
+  const [employees, setEmployees] = useState<EmployeeOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -74,10 +81,30 @@ export function useEmployeeTools(employeeId: string | undefined | null) {
     setObras((data ?? []) as Obra[]);
   }, []);
 
+  const fetchEmployees = useCallback(async () => {
+    if (!employeeId) return;
+
+    const { data, error: fetchError } = await supabase
+      .from('profiles')
+      .select('id, name, employee_code')
+      .eq('role', 'user')
+      .or('status.is.null,status.eq.active')
+      .neq('id', employeeId)
+      .order('name');
+
+    if (fetchError) {
+      console.error('Erro ao buscar funcionários:', fetchError);
+      return;
+    }
+
+    setEmployees((data ?? []) as EmployeeOption[]);
+  }, [employeeId]);
+
   useEffect(() => {
     fetchTools();
     fetchObras();
-  }, [fetchTools, fetchObras]);
+    fetchEmployees();
+  }, [fetchTools, fetchObras, fetchEmployees]);
 
   const findToolByPatrimonio = useCallback(async (codigo: string) => {
     const numeroPatrimonio = parsePatrimonioFromQr(codigo);
@@ -296,9 +323,93 @@ export function useEmployeeTools(employeeId: string | undefined | null) {
     [returnSingleTool]
   );
 
+  const registerEmployeeTransfer = useCallback(
+    async ({
+      tool,
+      destFuncionarioId,
+      destFuncionarioNome,
+      obraId,
+      obraNome,
+      currentFuncionarioId,
+      currentFuncionarioNome,
+      observacoes,
+    }: {
+      tool: EmployeeTool;
+      destFuncionarioId: string;
+      destFuncionarioNome: string;
+      obraId: string;
+      obraNome: string;
+      currentFuncionarioId: string;
+      currentFuncionarioNome: string;
+      observacoes?: string;
+    }) => {
+      if (tool.funcionario_atual_id !== currentFuncionarioId) {
+        throw new Error(
+          `A ferramenta "${tool.nome}" não pertence a você.`
+        );
+      }
+
+      if (tool.estado !== 'em_obra') {
+        throw new Error(
+          `A ferramenta "${tool.nome}" precisa estar em obra para ser transferida.`
+        );
+      }
+
+      if (destFuncionarioId === currentFuncionarioId) {
+        throw new Error('Selecione um funcionário diferente de você.');
+      }
+
+      if (!obraId) {
+        throw new Error('Selecione a obra de destino.');
+      }
+
+      const obraChanged = tool.obra_atual_id !== obraId;
+      const transferenciaEscopo = obraChanged ? 'ambos' : 'funcionario';
+      const obraAnteriorNome = await resolveObraNome(tool.obra_atual_id, tool);
+
+      const { error: movimentoError } = await supabase
+        .from('patrimonios_ferramentas_movimentos')
+        .insert({
+          ferramenta_id: tool.id,
+          tipo: 'transferencia',
+          funcionario_id: destFuncionarioId,
+          funcionario_nome: destFuncionarioNome,
+          obra_id: obraId,
+          obra_nome: obraNome,
+          funcionario_anterior_id: tool.funcionario_atual_id,
+          funcionario_anterior_nome: tool.funcionario_atual_nome,
+          obra_anterior_id: tool.obra_atual_id,
+          obra_anterior_nome: obraAnteriorNome,
+          transferencia_escopo: transferenciaEscopo,
+          observacoes: observacoes || null,
+          created_by: currentFuncionarioId,
+        });
+
+      if (movimentoError) {
+        throw new Error(`Erro ao registrar transferência de "${tool.nome}".`);
+      }
+
+      const { error: updateError } = await supabase
+        .from('patrimonios_ferramentas')
+        .update({
+          funcionario_atual_id: destFuncionarioId,
+          funcionario_atual_nome: destFuncionarioNome,
+          obra_atual_id: obraId,
+          estado: 'em_obra',
+        })
+        .eq('id', tool.id);
+
+      if (updateError) {
+        throw new Error(`Erro ao atualizar "${tool.nome}" após transferência.`);
+      }
+    },
+    [resolveObraNome]
+  );
+
   return {
     tools,
     obras,
+    employees,
     loading,
     error,
     refetch: fetchTools,
@@ -306,5 +417,6 @@ export function useEmployeeTools(employeeId: string | undefined | null) {
     registerToolMovement,
     registerToolReturn,
     registerBulkToolReturn,
+    registerEmployeeTransfer,
   };
 }

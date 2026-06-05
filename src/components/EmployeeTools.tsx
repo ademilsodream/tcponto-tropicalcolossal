@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useOptimizedAuth } from '@/contexts/OptimizedAuthContext';
-import { Wrench, QrCode, Loader2, MapPin, Undo2, X } from 'lucide-react';
+import { Wrench, QrCode, Loader2, MapPin, Undo2, X, ArrowRightLeft } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -49,18 +49,25 @@ export default function EmployeeTools() {
     refetch,
     findToolByPatrimonio,
     registerToolMovement,
+    employees,
     registerToolReturn,
     registerBulkToolReturn,
+    registerEmployeeTransfer,
   } = useEmployeeTools(employeeId);
 
   const [scannerOpen, setScannerOpen] = useState(false);
   const [transferOpen, setTransferOpen] = useState(false);
+  const [employeeTransferOpen, setEmployeeTransferOpen] = useState(false);
   const [returnOpen, setReturnOpen] = useState(false);
   const [selectedTool, setSelectedTool] = useState<EmployeeTool | null>(null);
+  const [employeeTransferTool, setEmployeeTransferTool] = useState<EmployeeTool | null>(null);
   const [returnTools, setReturnTools] = useState<EmployeeTool[]>([]);
   const [selectedObraId, setSelectedObraId] = useState('');
+  const [selectedDestEmployeeId, setSelectedDestEmployeeId] = useState('');
+  const [employeeTransferObraId, setEmployeeTransferObraId] = useState('');
   const [observacoes, setObservacoes] = useState('');
   const [returnObservacoes, setReturnObservacoes] = useState('');
+  const [employeeTransferObservacoes, setEmployeeTransferObservacoes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [lookingUp, setLookingUp] = useState(false);
   const [bulkMode, setBulkMode] = useState(false);
@@ -82,6 +89,19 @@ export default function EmployeeTools() {
   const resetReturnForm = () => {
     setReturnTools([]);
     setReturnObservacoes('');
+  };
+
+  const resetEmployeeTransferForm = () => {
+    setEmployeeTransferTool(null);
+    setSelectedDestEmployeeId('');
+    setEmployeeTransferObraId('');
+    setEmployeeTransferObservacoes('');
+  };
+
+  const openEmployeeTransfer = (tool: EmployeeTool) => {
+    setEmployeeTransferTool(tool);
+    setEmployeeTransferObraId(tool.obra_atual_id ?? '');
+    setEmployeeTransferOpen(true);
   };
 
   const exitBulkMode = () => {
@@ -194,6 +214,64 @@ export default function EmployeeTools() {
     } catch (err) {
       toast({
         title: 'Erro ao registrar',
+        description: err instanceof Error ? err.message : 'Tente novamente.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleConfirmEmployeeTransfer = async () => {
+    if (!employeeTransferTool || !selectedDestEmployeeId || !employeeTransferObraId || !employeeId) {
+      return;
+    }
+
+    const destEmployee = employees.find((e) => e.id === selectedDestEmployeeId);
+    const obra = obras.find((o) => o.id === employeeTransferObraId);
+
+    if (!destEmployee) {
+      toast({
+        title: 'Funcionário inválido',
+        description: 'Selecione um funcionário válido.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!obra) {
+      toast({
+        title: 'Obra inválida',
+        description: 'Selecione uma obra válida.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await registerEmployeeTransfer({
+        tool: employeeTransferTool,
+        destFuncionarioId: destEmployee.id,
+        destFuncionarioNome: destEmployee.name,
+        obraId: obra.id,
+        obraNome: obra.nome,
+        currentFuncionarioId: employeeId,
+        currentFuncionarioNome: funcionarioNome,
+        observacoes: employeeTransferObservacoes.trim() || undefined,
+      });
+
+      toast({
+        title: 'Transferência registrada',
+        description: `${employeeTransferTool.nome} foi transferida para ${destEmployee.name}.`,
+      });
+
+      setEmployeeTransferOpen(false);
+      resetEmployeeTransferForm();
+      refetch();
+    } catch (err) {
+      toast({
+        title: 'Erro ao transferir',
         description: err instanceof Error ? err.message : 'Tente novamente.',
         variant: 'destructive',
       });
@@ -370,15 +448,26 @@ export default function EmployeeTools() {
                 </div>
 
                 {!bulkMode && tool.estado === 'em_obra' && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-2"
-                    onClick={() => openSingleReturn(tool)}
-                  >
-                    <Undo2 className="h-4 w-4" />
-                    Devolver
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2"
+                      onClick={() => openEmployeeTransfer(tool)}
+                    >
+                      <ArrowRightLeft className="h-4 w-4" />
+                      Transferir
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2"
+                      onClick={() => openSingleReturn(tool)}
+                    >
+                      <Undo2 className="h-4 w-4" />
+                      Devolver
+                    </Button>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -484,6 +573,118 @@ export default function EmployeeTools() {
                 </>
               ) : (
                 'Confirmar'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={employeeTransferOpen}
+        onOpenChange={(open) => {
+          setEmployeeTransferOpen(open);
+          if (!open) resetEmployeeTransferForm();
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Transferir ferramenta</DialogTitle>
+          </DialogHeader>
+
+          {employeeTransferTool && (
+            <div className="space-y-4">
+              <div className="rounded-lg border p-3 text-sm space-y-1">
+                <p className="font-medium">{employeeTransferTool.nome}</p>
+                <p className="text-muted-foreground">
+                  Patrimônio: {employeeTransferTool.numero_patrimonio}
+                </p>
+                {employeeTransferTool.obra?.nome && (
+                  <p className="text-muted-foreground flex items-center gap-1">
+                    <MapPin className="h-3.5 w-3.5" />
+                    Obra atual: {employeeTransferTool.obra.nome}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="dest-employee-select">Funcionário destino</Label>
+                <Select
+                  value={selectedDestEmployeeId}
+                  onValueChange={setSelectedDestEmployeeId}
+                >
+                  <SelectTrigger id="dest-employee-select">
+                    <SelectValue placeholder="Selecione o funcionário" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {employees.map((employee) => (
+                      <SelectItem key={employee.id} value={employee.id}>
+                        {employee.name}
+                        {employee.employee_code ? ` (${employee.employee_code})` : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="employee-transfer-obra">Obra destino</Label>
+                <Select
+                  value={employeeTransferObraId}
+                  onValueChange={setEmployeeTransferObraId}
+                >
+                  <SelectTrigger id="employee-transfer-obra">
+                    <SelectValue placeholder="Selecione a obra" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {obras.map((obra) => (
+                      <SelectItem key={obra.id} value={obra.id}>
+                        {obra.nome}
+                        {obra.codigo ? ` (${obra.codigo})` : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="employee-transfer-observacoes">Observações (opcional)</Label>
+                <Textarea
+                  id="employee-transfer-observacoes"
+                  value={employeeTransferObservacoes}
+                  onChange={(e) => setEmployeeTransferObservacoes(e.target.value)}
+                  placeholder="Informações adicionais..."
+                  rows={3}
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setEmployeeTransferOpen(false);
+                resetEmployeeTransferForm();
+              }}
+              disabled={submitting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleConfirmEmployeeTransfer}
+              disabled={
+                !selectedDestEmployeeId ||
+                !employeeTransferObraId ||
+                submitting
+              }
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Transferindo...
+                </>
+              ) : (
+                'Confirmar transferência'
               )}
             </Button>
           </DialogFooter>
