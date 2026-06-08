@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
 import { useSessionManager } from '@/hooks/useSessionManager';
 import { debugLog, isMobile, checkConnectivity } from '@/utils/debugLogger';
+import { useAppDeviceTracking } from '@/hooks/useAppDeviceTracking';
 
 interface Profile {
   id: string;
@@ -56,6 +57,8 @@ export const OptimizedAuthProvider: React.FC<{ children: ReactNode }> = ({ child
   } = useSessionManager();
 
   const hasAccess = !!(profile && profile.can_register_time === true);
+
+  useAppDeviceTracking(user?.id);
 
   const loadProfile = useCallback(async (userId: string) => {
     if (!userId) {
@@ -222,8 +225,6 @@ export const OptimizedAuthProvider: React.FC<{ children: ReactNode }> = ({ child
     initializeSession();
     return () => { mounted = false; subscription.unsubscribe(); };
   }, [checkSessionExpiry, loadProfile]);
-
-  useEffect(() => { /* no-op without push */ }, [user]);
 
   useEffect(() => {
     if (!user) return;

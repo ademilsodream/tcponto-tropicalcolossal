@@ -1160,6 +1160,88 @@ export type Database = {
         }
         Relationships: []
       }
+      employee_app_devices: {
+        Row: {
+          app_build: string | null
+          app_version: string
+          device_key: string
+          device_model: string | null
+          employee_id: string
+          first_seen_at: string
+          id: string
+          last_seen_at: string
+          os_version: string | null
+          platform: string
+        }
+        Insert: {
+          app_build?: string | null
+          app_version: string
+          device_key: string
+          device_model?: string | null
+          employee_id: string
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          os_version?: string | null
+          platform: string
+        }
+        Update: {
+          app_build?: string | null
+          app_version?: string
+          device_key?: string
+          device_model?: string | null
+          employee_id?: string
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          os_version?: string | null
+          platform?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_app_devices_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_app_devices_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_in_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_app_devices_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_out_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_app_devices_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_end_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_app_devices_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_start_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_app_devices_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_pontos_faltantes_semana"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       employee_document_types: {
         Row: {
           created_at: string
