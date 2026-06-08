@@ -30,6 +30,7 @@ export async function trackAppDevice(employeeId: string): Promise<void> {
     );
 
     if (error) {
+      console.error('Erro ao registrar dispositivo do app:', error.message);
       debugLog('ERROR', 'Erro ao registrar dispositivo do app', { error: error.message });
       return;
     }
@@ -41,6 +42,7 @@ export async function trackAppDevice(employeeId: string): Promise<void> {
       build: appInfo.build,
     });
   } catch (error) {
+    console.error('Erro inesperado ao registrar dispositivo do app:', error);
     debugLog('ERROR', 'Erro inesperado ao registrar dispositivo do app', { error });
   }
 }

@@ -9,6 +9,7 @@ import { LogIn, Clock, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useOptimizedAuth } from '@/contexts/OptimizedAuthContext';
 import { useNavigate } from 'react-router-dom';
+import { getAppVersion } from '@/utils/appVersion';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -17,9 +18,14 @@ const Login = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [appVersion, setAppVersion] = useState('');
 
   const { user, profile, isLoading: authLoading, hasAccess, loginWithRememberMe, sessionSettings } = useOptimizedAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    getAppVersion().then(setAppVersion);
+  }, []);
 
   useEffect(() => {
     if (!authLoading && user && profile && hasAccess) {
@@ -218,7 +224,9 @@ const Login = () => {
         </Card>
 
         <div className="text-center mt-6">
-          <p className="text-white text-sm opacity-75">TCPonto-v3.0</p>
+          <p className="text-white text-sm opacity-75">
+            TCPonto{appVersion ? ` v${appVersion}` : ''}
+          </p>
         </div>
       </div>
     </div>
