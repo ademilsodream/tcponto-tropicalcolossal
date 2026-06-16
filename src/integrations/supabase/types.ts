@@ -928,6 +928,42 @@ export type Database = {
           },
         ]
       }
+      despesas_nota_credito_vinculos: {
+        Row: {
+          created_at: string
+          fatura_id: string
+          id: string
+          nota_credito_id: string
+        }
+        Insert: {
+          created_at?: string
+          fatura_id: string
+          id?: string
+          nota_credito_id: string
+        }
+        Update: {
+          created_at?: string
+          fatura_id?: string
+          id?: string
+          nota_credito_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "despesas_nota_credito_vinculos_fatura_id_fkey"
+            columns: ["fatura_id"]
+            isOneToOne: false
+            referencedRelation: "despesas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "despesas_nota_credito_vinculos_nota_credito_id_fkey"
+            columns: ["nota_credito_id"]
+            isOneToOne: false
+            referencedRelation: "despesas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       edit_requests: {
         Row: {
           created_at: string
@@ -1109,57 +1145,6 @@ export type Database = {
         }
         Relationships: []
       }
-      employee_balance_history: {
-        Row: {
-          accumulated_balance: number
-          balance_difference: number
-          balance_type: string
-          calculated_amount: number
-          created_at: string
-          created_by: string | null
-          description: string | null
-          employee_id: string
-          id: string
-          paid_amount: number
-          period_end: string
-          period_start: string
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          accumulated_balance?: number
-          balance_difference?: number
-          balance_type: string
-          calculated_amount?: number
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          employee_id: string
-          id?: string
-          paid_amount?: number
-          period_end: string
-          period_start: string
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          accumulated_balance?: number
-          balance_difference?: number
-          balance_type?: string
-          calculated_amount?: number
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          employee_id?: string
-          id?: string
-          paid_amount?: number
-          period_end?: string
-          period_start?: string
-          status?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       employee_app_devices: {
         Row: {
           app_build: string | null
@@ -1241,6 +1226,57 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
         ]
+      }
+      employee_balance_history: {
+        Row: {
+          accumulated_balance: number
+          balance_difference: number
+          balance_type: string
+          calculated_amount: number
+          created_at: string
+          created_by: string | null
+          description: string | null
+          employee_id: string
+          id: string
+          paid_amount: number
+          period_end: string
+          period_start: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          accumulated_balance?: number
+          balance_difference?: number
+          balance_type: string
+          calculated_amount?: number
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          employee_id: string
+          id?: string
+          paid_amount?: number
+          period_end: string
+          period_start: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          accumulated_balance?: number
+          balance_difference?: number
+          balance_type?: string
+          calculated_amount?: number
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          employee_id?: string
+          id?: string
+          paid_amount?: number
+          period_end?: string
+          period_start?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       employee_document_types: {
         Row: {
@@ -3182,48 +3218,48 @@ export type Database = {
       }
       patrimonios_ferramentas: {
         Row: {
-          id: string
-          numero_patrimonio: string
-          nome: string
-          numero_serie: string | null
-          modelo: string | null
-          foto_url: string | null
+          created_at: string
           estado: string
+          foto_url: string | null
           funcionario_atual_id: string | null
           funcionario_atual_nome: string | null
+          id: string
+          modelo: string | null
+          nome: string
+          numero_patrimonio: string
+          numero_serie: string | null
           obra_atual_id: string | null
           observacoes: string | null
-          created_at: string
           updated_at: string
         }
         Insert: {
-          id?: string
-          numero_patrimonio: string
-          nome: string
-          numero_serie?: string | null
-          modelo?: string | null
-          foto_url?: string | null
+          created_at?: string
           estado?: string
+          foto_url?: string | null
           funcionario_atual_id?: string | null
           funcionario_atual_nome?: string | null
+          id?: string
+          modelo?: string | null
+          nome: string
+          numero_patrimonio: string
+          numero_serie?: string | null
           obra_atual_id?: string | null
           observacoes?: string | null
-          created_at?: string
           updated_at?: string
         }
         Update: {
-          id?: string
-          numero_patrimonio?: string
-          nome?: string
-          numero_serie?: string | null
-          modelo?: string | null
-          foto_url?: string | null
+          created_at?: string
           estado?: string
+          foto_url?: string | null
           funcionario_atual_id?: string | null
           funcionario_atual_nome?: string | null
+          id?: string
+          modelo?: string | null
+          nome?: string
+          numero_patrimonio?: string
+          numero_serie?: string | null
           obra_atual_id?: string | null
           observacoes?: string | null
-          created_at?: string
           updated_at?: string
         }
         Relationships: [
@@ -3238,57 +3274,57 @@ export type Database = {
       }
       patrimonios_ferramentas_movimentos: {
         Row: {
-          id: string
+          created_at: string
+          created_by: string | null
+          data_movimento: string
           ferramenta_id: string
-          tipo: string
+          funcionario_anterior_id: string | null
+          funcionario_anterior_nome: string | null
           funcionario_id: string | null
           funcionario_nome: string | null
+          id: string
+          obra_anterior_id: string | null
+          obra_anterior_nome: string | null
           obra_id: string | null
           obra_nome: string | null
           observacoes: string | null
-          data_movimento: string
-          created_by: string | null
-          created_at: string
-          funcionario_anterior_id: string | null
-          funcionario_anterior_nome: string | null
-          obra_anterior_id: string | null
-          obra_anterior_nome: string | null
+          tipo: string
           transferencia_escopo: string | null
         }
         Insert: {
-          id?: string
+          created_at?: string
+          created_by?: string | null
+          data_movimento?: string
           ferramenta_id: string
-          tipo: string
+          funcionario_anterior_id?: string | null
+          funcionario_anterior_nome?: string | null
           funcionario_id?: string | null
           funcionario_nome?: string | null
+          id?: string
+          obra_anterior_id?: string | null
+          obra_anterior_nome?: string | null
           obra_id?: string | null
           obra_nome?: string | null
           observacoes?: string | null
-          data_movimento?: string
-          created_by?: string | null
-          created_at?: string
-          funcionario_anterior_id?: string | null
-          funcionario_anterior_nome?: string | null
-          obra_anterior_id?: string | null
-          obra_anterior_nome?: string | null
+          tipo: string
           transferencia_escopo?: string | null
         }
         Update: {
-          id?: string
+          created_at?: string
+          created_by?: string | null
+          data_movimento?: string
           ferramenta_id?: string
-          tipo?: string
+          funcionario_anterior_id?: string | null
+          funcionario_anterior_nome?: string | null
           funcionario_id?: string | null
           funcionario_nome?: string | null
+          id?: string
+          obra_anterior_id?: string | null
+          obra_anterior_nome?: string | null
           obra_id?: string | null
           obra_nome?: string | null
           observacoes?: string | null
-          data_movimento?: string
-          created_by?: string | null
-          created_at?: string
-          funcionario_anterior_id?: string | null
-          funcionario_anterior_nome?: string | null
-          obra_anterior_id?: string | null
-          obra_anterior_nome?: string | null
+          tipo?: string
           transferencia_escopo?: string | null
         }
         Relationships: [
@@ -5883,6 +5919,7 @@ export type Database = {
         Returns: string
       }
       expire_old_hour_bank_hours: { Args: never; Returns: undefined }
+      gerar_proximo_numero_patrimonio: { Args: never; Returns: string }
       get_audit_logs: {
         Args: {
           p_end_date?: string
