@@ -336,6 +336,7 @@ export const useUnifiedLocation = (
     validateLocation,
     calibrateForCurrentLocation,
     refreshLocation,
+    forceFreshLocation,
     clearCalibration,
     gpsQuality,
     debug
