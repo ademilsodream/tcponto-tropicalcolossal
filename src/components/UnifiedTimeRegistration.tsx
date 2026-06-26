@@ -131,7 +131,7 @@ const UnifiedTimeRegistration: React.FC = () => {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  const { location, loading, error, validationResult, canRegister, calibration, validateLocation, calibrateForCurrentLocation, refreshLocation, clearCalibration, gpsQuality, debug } = useUnifiedLocation(allowedLocations, true);
+  const { location, loading, error, validationResult, canRegister, calibration, validateLocation, calibrateForCurrentLocation, refreshLocation, forceFreshLocation, clearCalibration, gpsQuality, debug } = useUnifiedLocation(allowedLocations, true);
 
   const fetchLastRegistration = useCallback(async () => {
     if (!profile?.id) return;
