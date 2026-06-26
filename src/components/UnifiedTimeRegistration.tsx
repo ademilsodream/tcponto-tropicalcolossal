@@ -264,7 +264,8 @@ const UnifiedTimeRegistration: React.FC = () => {
         entry = { address, distance: 10, latitude: lat || null, longitude: lon || null, timestamp: ts.toISOString(), locationName: 'Remoto' };
       } else {
         if (!lat || !lon) { toast({ title: 'Erro', description: 'Localização não disponível. Tente novamente.', variant: 'destructive' }); setIsRegistering(false); return; }
-        const addr = (await reverseGeocode(lat, lon)).address;
+        let addr = `Coordenadas: ${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+        try { addr = (await reverseGeocode(lat, lon)).address || addr; } catch {}
         const dist = Math.round(freshValidation?.distance ?? 0);
         entry = {
           address: addr,
