@@ -131,7 +131,7 @@ const UnifiedTimeRegistration: React.FC = () => {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  const { location, loading, error, validationResult, canRegister, calibration, validateLocation, calibrateForCurrentLocation, refreshLocation, clearCalibration, gpsQuality, debug } = useUnifiedLocation(allowedLocations, true);
+  const { location, loading, error, validationResult, canRegister, calibration, validateLocation, calibrateForCurrentLocation, refreshLocation, forceFreshLocation, clearCalibration, gpsQuality, debug } = useUnifiedLocation(allowedLocations, true);
 
   const fetchLastRegistration = useCallback(async () => {
     if (!profile?.id) return;
@@ -183,15 +183,33 @@ const UnifiedTimeRegistration: React.FC = () => {
       return;
     }
 
-    // Coletar localização atual (resiliente)
+    // Coletar localização FRESCA no momento exato da batida (sanity check)
     let lat = location?.latitude ?? 0;
     let lon = location?.longitude ?? 0;
     let ts = location ? new Date(location.timestamp) : now;
-    if (!lat || !lon) {
-      const gps = await getCurrentGPS();
-      if (gps) {
-        lat = gps.latitude; lon = gps.longitude; ts = new Date(gps.timestamp);
+    let freshValidation = validationResult;
+
+    if (!isRemote) {
+      try {
+        toast({ title: 'Aguarde', description: 'Confirmando localização GPS...', duration: 1500 });
+        const fresh = await forceFreshLocation();
+        freshValidation = fresh;
+        if (fresh.location) {
+          lat = fresh.location.latitude;
+          lon = fresh.location.longitude;
+          ts = new Date(fresh.location.timestamp);
+        }
+        if (!fresh.valid) {
+          toast({ title: 'Localização não confirmada', description: fresh.message || 'Sinal GPS instável, tente novamente em alguns segundos.', variant: 'destructive' });
+          return;
+        }
+      } catch (e: any) {
+        toast({ title: 'Erro de GPS', description: e?.message || 'Não foi possível confirmar a localização.', variant: 'destructive' });
+        return;
       }
+    } else if (!lat || !lon) {
+      const gps = await getCurrentGPS();
+      if (gps) { lat = gps.latitude; lon = gps.longitude; ts = new Date(gps.timestamp); }
     }
 
     setIsRegistering(true);
@@ -206,14 +224,14 @@ const UnifiedTimeRegistration: React.FC = () => {
       } else {
         if (!lat || !lon) { toast({ title: 'Erro', description: 'Localização não disponível. Tente novamente.', variant: 'destructive' }); setIsRegistering(false); return; }
         const addr = (await reverseGeocode(lat, lon)).address;
-        const dist = Math.round(validationResult?.distance ?? 0);
+        const dist = Math.round(freshValidation?.distance ?? 0);
         entry = {
           address: addr,
           distance: Number.isFinite(dist) ? dist : 0,
           latitude: lat,
           longitude: lon,
           timestamp: ts.toISOString(),
-          locationName: validationResult?.closestLocation?.name || 'Desconhecido',
+          locationName: freshValidation?.closestLocation?.name || 'Desconhecido',
         };
       }
 
