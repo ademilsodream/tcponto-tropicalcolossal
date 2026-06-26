@@ -5894,6 +5894,7 @@ export type Database = {
       check_excessive_overtime: { Args: never; Returns: undefined }
       check_incomplete_records: { Args: never; Returns: undefined }
       cleanup_expired_sessions: { Args: never; Returns: undefined }
+      cleanup_old_data: { Args: never; Returns: undefined }
       cleanup_orphan_users: { Args: never; Returns: Json }
       count_working_days: {
         Args: { end_date: string; start_date: string }
