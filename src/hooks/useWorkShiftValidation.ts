@@ -90,12 +90,6 @@ export const useWorkShiftValidation = () => {
           setLoading(false);
           return;
         }
-          setHasShift(false);
-          setCurrentShiftMessage('Modo livre - sem restrições de horário');
-          setShiftSchedule(null);
-          setLoading(false);
-          return;
-        }
 
         // Se não tem shift_id, modo livre
         if (!profileData?.shift_id) {
