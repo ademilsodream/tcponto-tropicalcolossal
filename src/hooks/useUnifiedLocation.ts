@@ -35,6 +35,7 @@ export interface UseUnifiedLocationReturn {
   validateLocation: () => Promise<void>;
   calibrateForCurrentLocation: () => Promise<void>;
   refreshLocation: () => Promise<void>;
+  forceFreshLocation: () => Promise<UnifiedLocationResult>;
   clearCalibration: (locationId: string) => void;
   
   // Informações de qualidade
