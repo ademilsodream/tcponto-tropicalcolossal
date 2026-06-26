@@ -381,6 +381,24 @@ const UnifiedTimeRegistration: React.FC = () => {
             <Clock className="w-6 h-6 text-blue-600" />
             <h1 className="text-xl font-bold text-gray-900">Registro de Ponto</h1>
           </div>
+          <div className="flex items-center gap-2">
+            {!online && (
+              <Badge variant="destructive" className="gap-1">
+                <WifiOff className="w-3 h-3" /> Offline
+              </Badge>
+            )}
+            {pendingCount > 0 && (
+              <Badge
+                variant="secondary"
+                className="gap-1 cursor-pointer"
+                onClick={() => online && !syncing && syncNow()}
+                title={online ? 'Clique para sincronizar agora' : 'Aguardando internet'}
+              >
+                <CloudUpload className="w-3 h-3" />
+                {syncing ? 'Enviando…' : `${pendingCount} pendente${pendingCount > 1 ? 's' : ''}`}
+              </Badge>
+            )}
+          </div>
         </div>
       </div>
 
