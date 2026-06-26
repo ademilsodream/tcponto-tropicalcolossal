@@ -24,6 +24,19 @@ interface ShiftTolerances {
   break_tolerance_minutes: number;
 }
 
+async function persistShiftCache(
+  userId: string,
+  shift: { hasShift: boolean; schedules: Record<number, any>; tolerances: any; shiftName?: string }
+) {
+  const existing = await loadOfflineCache(userId);
+  await saveOfflineCache({
+    userId,
+    allowedLocations: existing?.allowedLocations || [],
+    shift,
+    cachedAt: Date.now(),
+  });
+}
+
 export const useWorkShiftValidation = () => {
   const { user } = useOptimizedAuth();
   const [hasShift, setHasShift] = useState<boolean>(false);
