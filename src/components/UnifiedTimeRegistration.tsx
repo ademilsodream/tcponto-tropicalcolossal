@@ -224,14 +224,14 @@ const UnifiedTimeRegistration: React.FC = () => {
       } else {
         if (!lat || !lon) { toast({ title: 'Erro', description: 'Localização não disponível. Tente novamente.', variant: 'destructive' }); setIsRegistering(false); return; }
         const addr = (await reverseGeocode(lat, lon)).address;
-        const dist = Math.round(validationResult?.distance ?? 0);
+        const dist = Math.round(freshValidation?.distance ?? 0);
         entry = {
           address: addr,
           distance: Number.isFinite(dist) ? dist : 0,
           latitude: lat,
           longitude: lon,
           timestamp: ts.toISOString(),
-          locationName: validationResult?.closestLocation?.name || 'Desconhecido',
+          locationName: freshValidation?.closestLocation?.name || 'Desconhecido',
         };
       }
 
