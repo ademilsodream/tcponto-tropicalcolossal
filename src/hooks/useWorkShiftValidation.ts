@@ -166,6 +166,27 @@ export const useWorkShiftValidation = () => {
           end_time: todaySchedule.end_time
         });
 
+        // Persist full week schedule to offline cache
+        const schedulesMap: Record<number, any> = {};
+        for (const s of schedulesData as any[]) {
+          schedulesMap[s.day_of_week] = {
+            start_time: s.start_time,
+            break_start_time: s.break_start_time,
+            break_end_time: s.break_end_time,
+            end_time: s.end_time,
+          };
+        }
+        await persistShiftCache(user.id, {
+          hasShift: true,
+          schedules: schedulesMap,
+          tolerances: {
+            early_tolerance_minutes: shiftData.early_tolerance_minutes || 15,
+            late_tolerance_minutes: shiftData.late_tolerance_minutes || 15,
+            break_tolerance_minutes: shiftData.break_tolerance_minutes || 15,
+          },
+          shiftName: shiftData.name,
+        });
+
         setCurrentShiftMessage(`Turno: ${shiftData.name}`);
         setLoading(false);
 
