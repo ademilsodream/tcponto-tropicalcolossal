@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useOptimizedAuth } from '@/contexts/OptimizedAuthContext';
+import { loadOfflineCache, saveOfflineCache, isCacheFresh } from '@/utils/offlineCache';
 
 interface AllowedButtons {
   clock_in: boolean;
