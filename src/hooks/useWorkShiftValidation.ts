@@ -103,6 +103,8 @@ export const useWorkShiftValidation = () => {
           setHasShift(false);
           setCurrentShiftMessage('Modo livre - sem restrições de horário');
           setShiftSchedule(null);
+          // Cache: free mode
+          await persistShiftCache(user.id, { hasShift: false, schedules: {}, tolerances: shiftTolerances });
           setLoading(false);
           return;
         }
