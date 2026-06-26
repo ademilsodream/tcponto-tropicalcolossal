@@ -1,83 +1,76 @@
 
-# Melhorar precisão do GPS para registro de ponto
+# Registro de ponto offline (com validação de localização mantida)
 
-## Diagnóstico atual
+## Como a validação da obra funciona sem internet
 
-O sistema hoje (`src/utils/unifiedLocationSystem.ts` + `useUnifiedLocation.ts`) tem comportamentos que **prejudicam a precisão**:
+A validação de "está dentro da obra permitida?" hoje já roda **inteiramente no celular** dentro de `UnifiedLocationSystem.validateLocation` — ela só precisa de 3 coisas:
 
-1. **Range adaptativo que ALARGA quando o GPS é ruim** — se a precisão piora, o raio aceito aumenta até 2x (ou +200m). Isso é o oposto do que queremos.
-2. **Aceita leitura única** do GPS (`getCurrentPosition` uma vez). Sem média, sem descarte de outliers.
-3. **Aceita precisão de até 100m** como "REGULAR" e válida para bater ponto.
-4. **Cache de 30s + `maximumAge` de 60–120s** pode retornar fix antigo, longe da posição real.
-5. **Calibração** soma um offset salvo no localStorage — se foi calibrado errado uma vez, contamina todas as marcações.
-6. Validação roda em qualquer leitura, sem exigir estabilidade entre amostras.
+1. **GPS do aparelho** → funciona offline (é sensor, não rede).
+2. **Lista de obras permitidas** (`allowed_locations`: latitude, longitude, raio, restrições por funcionário) → hoje vem do Supabase, mas vamos **cachear localmente**.
+3. **Cálculo de distância + range adaptativo + calibração** → 100% código no app, já roda local.
 
-## O que vou fazer (apenas frontend, regras de negócio mantidas)
+Ou seja, a única peça que falta offline é a lista de obras. Resolvendo o cache, a validação roda **idêntica** ao modo online — mesmas regras de raio, mesma tolerância adaptativa, mesma rejeição por GPS > 40m, mesma calibração.
 
-### 1. Coleta multi-amostra com convergência
-Em vez de 1 leitura, abrir `watchPosition` (e equivalente Capacitor) por até ~8s e coletar várias amostras:
-- Descartar amostras com `accuracy > 50m`.
-- Parar assim que tiver **3 amostras consecutivas com accuracy ≤ 15m** dentro de 10m entre si (fix estável) → usa a melhor.
-- Se não convergir, usar a **mediana** das melhores 3 amostras (mais robusto que média contra outliers).
-- Fallback para `getCurrentPosition` só se o watch falhar.
+### O cache de obras permitidas
 
-### 2. Thresholds mais rigorosos
-- `HIGH_ACCURACY_THRESHOLD`: 15m → **10m**
-- `MEDIUM_ACCURACY_THRESHOLD`: 35m → **25m**
-- Limite máximo aceito para registrar: **40m** (hoje aceita até 100m). Acima disso → bloqueia e pede para tentar de novo / ir a céu aberto.
+- Toda vez que o funcionário abre o app **com internet**, salvamos no IndexedDB do aparelho:
+  - Lista de `allowed_locations` ativas que ele pode usar (já filtradas pelas restrições dele).
+  - Turno + horários (`work_shifts`, `work_shift_schedules`) para o ajuste de tolerância.
+  - Carimbo de data/hora do último refresh.
+- Esse cache é por funcionário e fica criptografado pelo próprio Android/iOS no storage do app.
+- Se estiver offline, o `useUnifiedLocation` lê do cache em vez de chamar o Supabase. A função `validateLocation` recebe a mesma estrutura `AllowedLocation[]` e nem percebe a diferença.
 
-### 3. Range adaptativo invertido (corrige o bug conceitual)
-Hoje: GPS ruim → raio maior (aceita qualquer coisa).
-Novo: raio efetivo = `max(range_base, accuracy * 1.5)` **mas nunca maior que `range_base + 25m`**. Ou seja, a tolerância extra é pequena e limitada — não compensa GPS ruim aceitando o ponto longe.
+### Regras de validade do cache
 
-### 4. Cache e maximumAge mais curtos
-- `CACHE_DURATION`: 30s → **8s**
-- `maximumAge`: 60–120s → **5s** (sempre forçar fix novo na hora de bater ponto)
-- Antes de gravar o ponto em `UnifiedTimeRegistration.handleTimeRegistration`, forçar **refresh** da localização (ignorar cache) para garantir leitura fresca no momento exato da batida.
+- **Cache fresco (≤ 7 dias)** → validação offline liberada normalmente.
+- **Cache velho (> 7 dias sem refresh)** → bloqueia registro offline e mostra: "Conecte-se à internet para atualizar suas obras permitidas". Isso evita aceitar registro em obra que já foi desativada / removida do funcionário há muito tempo.
+- **Sem cache (primeiro acesso nunca foi online)** → bloqueia com a mesma mensagem.
 
-### 5. Calibração mais segura
-- Limitar offset máximo da calibração a **30m** (se calibrar com offset maior, rejeita — era leitura ruim).
-- Reduzir validade de 72h → **24h**.
-- Quando aplicar calibração, **não melhorar artificialmente a `accuracy`** reportada (hoje faz `Math.min(accuracy, calibration.accuracy)` — isso mascara GPS ruim).
+### Quando admin muda obras/raios
 
-### 6. Sanity check final antes de gravar
-Em `handleTimeRegistration`, antes do `INSERT/UPDATE`:
-- Refazer 1 leitura fresca.
-- Confirmar que distância ao local permitido ≤ `range_base + 25m`.
-- Confirmar `accuracy ≤ 40m`.
-- Se falhar → toast "Sinal GPS instável, tente novamente em alguns segundos" e não grava.
+Se o admin altera o raio ou remove uma obra enquanto o funcionário está offline há dias, o registro offline desse funcionário ainda vai ser validado pela versão antiga das regras. Na hora da sincronização, o servidor **aceita o registro** (porque o ajuste foi feito conforme as regras vigentes na hora da batida — é o comportamento correto para auditoria; o funcionário não pode ser punido por algo que mudou depois). Vamos gravar no `time_records` um campo `offline_synced_at` + os metadados do cache usado, para o admin poder auditar se precisar.
 
-### 7. UI/feedback (mínimo)
-- `UnifiedGPSStatus` já mostra qualidade — só ajustar os textos dos thresholds (10/25/40) e mostrar "coletando amostras… X/3" durante a convergência.
+## O que muda no fluxo de bater ponto
+
+1. Funcionário aperta "Registrar Ponto".
+2. App pega GPS (multi-amostra, exatamente como hoje).
+3. App chama `validateLocation(allowedLocations)` — `allowedLocations` vem do **cache local** quando offline ou do Supabase quando online.
+4. Se válido → aplica `calculateAdjustedTime` (cache de turno também é local) e:
+   - **Online:** grava no Supabase (fluxo atual).
+   - **Offline:** salva na fila local com toast "Ponto registrado offline — será sincronizado".
+5. Quando voltar a internet, fila sincroniza em segundo plano usando idempotência (`client_id` UUID) e merge por ação (`clock_in`, `lunch_start`, etc.), sem sobrescrever batidas que outro dispositivo já enviou.
 
 ## Arquivos afetados
 
-- `src/utils/unifiedLocationSystem.ts` — core das mudanças (coleta multi-amostra, thresholds, range adaptativo, calibração).
-- `src/hooks/useUnifiedLocation.ts` — expor progresso de convergência e função `forceFreshLocation()`.
-- `src/components/UnifiedTimeRegistration.tsx` — chamar `forceFreshLocation()` + sanity check antes de gravar.
-- `src/components/UnifiedGPSStatus.tsx` — textos dos novos thresholds e indicador de coleta.
+- `src/utils/offlineCache.ts` (novo) — guarda obras permitidas + turno do funcionário no IndexedDB.
+- `src/utils/offlineQueue.ts` (novo) — fila de registros pendentes com `client_id`, contagem de tentativas, status.
+- `src/hooks/useOnlineStatus.ts` (novo) — detecta online/offline (inclui ping leve para "Wi-Fi sem internet").
+- `src/hooks/useOfflineSync.ts` (novo) — sincronizador em background, montado uma vez no `App.tsx`.
+- `src/hooks/useUnifiedLocation.ts` — usa cache quando offline; popula cache quando online.
+- `src/hooks/useWorkShiftValidation.ts` — usa cache quando offline; popula cache quando online.
+- `src/components/UnifiedTimeRegistration.tsx` — badge "📴 Offline" / "⏳ X pendentes", chama `persistRegistration` que decide entre Supabase direto e fila.
+- `src/App.tsx` — monta `useOfflineSync` global.
+- `package.json` — adiciona `idb-keyval`.
 
-## Detalhes técnicos
+## O que **não** muda
 
-```text
-Fluxo de coleta (novo)
-─────────────────────
-start watchPosition (high accuracy)
-  ├─ sample arrives
-  │    ├─ accuracy > 50m? descarta
-  │    └─ push em buffer[]
-  ├─ buffer tem 3 últimas com acc<=10m e spread<=10m? → CONVERGIU, usa melhor
-  ├─ 8s passaram?
-  │    ├─ buffer >= 3? → usa MEDIANA das 3 melhores
-  │    └─ buffer < 3?  → erro "GPS não estabilizou"
-  └─ clearWatch
-```
+- `UnifiedLocationSystem.validateLocation` — mesmas regras, mesmos thresholds, mesma calibração.
+- `calculateAdjustedTime` e tolerância de turno — idênticos.
+- Tabela `time_records`, RLS, edge functions — sem alteração de schema.
+- Fluxo online — quem tem internet não sente diferença nenhuma.
 
-Regras de negócio (turnos, tolerâncias, ajuste de horário em `calculateAdjustedTime`, RLS, tabelas) ficam **inalteradas**. A mudança é puramente na camada de obtenção/validação de coordenadas.
+## Limitações honestas
+
+- **Primeiro acesso precisa de internet** (para baixar sessão + cache de obras + turno).
+- **Endereço textual** (reverse-geocoding via Mapbox/Nominatim) precisa de internet. Offline, grava "Coordenadas: lat,lng" e o admin enxerga o ponto no mapa normalmente.
+- **Cache > 7 dias** bloqueia registro offline (proteção contra obras desativadas).
+- **Conflito multi-dispositivo** (mesma ação batida em 2 aparelhos) → vence a mais recente; descarte é logado para auditoria.
 
 ## Resultado esperado
 
-- Marcações deixam de ser aceitas com GPS de 50–100m.
-- Fix sempre fresco no momento da batida (não cache antigo).
-- Menos falsos positivos por calibração ruim acumulada.
-- Quando o sinal está bom, a experiência fica igual à de hoje (o tempo extra de convergência é ≤ 2–3s).
+Funcionário em obra sem sinal:
+- GPS pega coordenadas normalmente.
+- App valida contra a lista de obras permitidas que está no celular (atualizada na última vez que abriu com internet).
+- Se está dentro do raio da obra → registra offline com horário ajustado pelo turno.
+- Se está fora → bloqueia com a mesma mensagem de hoje ("Você está a Xm de [obra]").
+- Quando chegar em área com sinal, tudo sobe sozinho sem ele tocar em nada.

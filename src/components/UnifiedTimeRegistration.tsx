@@ -18,6 +18,12 @@ import LocationMap from './LocationMap';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AnnouncementNotification } from './AnnouncementNotification';
 import { useWorkShiftValidation } from '@/hooks/useWorkShiftValidation';
+import { loadOfflineCache, saveOfflineCache, isCacheFresh, ageInDays } from '@/utils/offlineCache';
+import { enqueueRegistration } from '@/utils/offlineQueue';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { useOfflineSync } from '@/hooks/useOfflineSync';
+import { Badge } from '@/components/ui/badge';
+import { WifiOff, CloudUpload } from 'lucide-react';
 
 const COOLDOWN_MS = 20 * 60 * 1000; // 20 minutos
 
@@ -69,11 +75,35 @@ const UnifiedTimeRegistration: React.FC = () => {
 
   const isRemote = profile?.use_location_tracking === false;
 
-  // Carregar localizações ativas
+  const online = useOnlineStatus();
+  const { pendingCount, syncing, syncNow } = useOfflineSync();
+
+  // Carregar localizações ativas (com fallback offline)
   useEffect(() => {
     const loadAllowed = async () => {
       try {
         setLoadingLocations(true);
+
+        // OFFLINE: ler do cache local
+        if (!navigator.onLine) {
+          if (profile?.id) {
+            const cache = await loadOfflineCache(profile.id);
+            if (cache && isCacheFresh(cache)) {
+              setAllowedLocations(cache.allowedLocations || []);
+            } else {
+              setAllowedLocations([]);
+              toast({
+                title: 'Sem conexão',
+                description: cache
+                  ? `Cache expirado (${ageInDays(cache)}d). Conecte-se à internet para atualizar as obras permitidas.`
+                  : 'Conecte-se à internet ao menos uma vez para baixar as obras permitidas.',
+                variant: 'destructive',
+              });
+            }
+          }
+          return;
+        }
+
         const { data, error } = await supabase
           .from('allowed_locations')
           .select('*')
@@ -87,6 +117,17 @@ const UnifiedTimeRegistration: React.FC = () => {
           range_meters: Number(loc.range_meters)
         }));
         setAllowedLocations(formatted);
+
+        // Persist no cache offline (mantém shift cache existente)
+        if (profile?.id) {
+          const existing = await loadOfflineCache(profile.id);
+          await saveOfflineCache({
+            userId: profile.id,
+            allowedLocations: formatted,
+            shift: existing?.shift || null,
+            cachedAt: Date.now(),
+          });
+        }
       } catch (err) {
         console.error('Erro ao carregar localizações permitidas:', err);
         toast({ title: 'Erro', description: 'Falha ao carregar localizações permitidas.', variant: 'destructive' });
@@ -96,7 +137,7 @@ const UnifiedTimeRegistration: React.FC = () => {
       }
     };
     loadAllowed();
-  }, [toast]);
+  }, [toast, profile?.id, online]);
 
   // Cooldown
   useEffect(() => {
@@ -223,7 +264,8 @@ const UnifiedTimeRegistration: React.FC = () => {
         entry = { address, distance: 10, latitude: lat || null, longitude: lon || null, timestamp: ts.toISOString(), locationName: 'Remoto' };
       } else {
         if (!lat || !lon) { toast({ title: 'Erro', description: 'Localização não disponível. Tente novamente.', variant: 'destructive' }); setIsRegistering(false); return; }
-        const addr = (await reverseGeocode(lat, lon)).address;
+        let addr = `Coordenadas: ${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+        try { addr = (await reverseGeocode(lat, lon)).address || addr; } catch {}
         const dist = Math.round(freshValidation?.distance ?? 0);
         entry = {
           address: addr,
@@ -274,32 +316,48 @@ const UnifiedTimeRegistration: React.FC = () => {
         }
       }
 
-      if (existing?.id) {
-        // UPDATE
-        const updateData: any = { locations: mergedLocations, updated_at: now.toISOString() };
-        updateData[action] = actionTime;
-        const { error } = await supabase.from('time_records').update(updateData).eq('id', existing.id);
-        if (error) throw error;
-      } else {
-        // INSERT novo registro do dia
-        const insertData: any = {
-          user_id: profile.id,
-          date: today,
-          status: 'active',
-          locations: mergedLocations,
-        };
-        insertData[action] = actionTime;
-        const { error } = await supabase.from('time_records').insert(insertData);
-        if (error) throw error;
-      }
-
-      await fetchLastRegistration();
-      toast({ title: 'Sucesso', description: `${{
+      const labelMap: Record<string, string> = {
         clock_in: 'Entrada',
         lunch_start: 'Início do almoço',
         lunch_end: 'Volta do almoço',
-        clock_out: 'Saída'
-      }[action]} registrada.` });
+        clock_out: 'Saída',
+      };
+
+      if (!navigator.onLine) {
+        // OFFLINE: enfileirar localmente — validação de obra já passou contra o cache.
+        await enqueueRegistration({
+          user_id: profile.id,
+          date: today,
+          action,
+          action_time: actionTime,
+          locations: { [action]: entry },
+        });
+        await fetchLastRegistration();
+        toast({
+          title: 'Ponto registrado offline',
+          description: `${labelMap[action]} será sincronizada quando houver internet.`,
+        });
+      } else {
+        if (existing?.id) {
+          const updateData: any = { locations: mergedLocations, updated_at: now.toISOString() };
+          updateData[action] = actionTime;
+          const { error } = await supabase.from('time_records').update(updateData).eq('id', existing.id);
+          if (error) throw error;
+        } else {
+          const insertData: any = {
+            user_id: profile.id,
+            date: today,
+            status: 'active',
+            locations: mergedLocations,
+          };
+          insertData[action] = actionTime;
+          const { error } = await supabase.from('time_records').insert(insertData);
+          if (error) throw error;
+        }
+
+        await fetchLastRegistration();
+        toast({ title: 'Sucesso', description: `${labelMap[action]} registrada.` });
+      }
 
       const end = Date.now() + COOLDOWN_MS;
       setCooldownEndTime(end);
@@ -322,6 +380,24 @@ const UnifiedTimeRegistration: React.FC = () => {
           <div className="flex items-center gap-3">
             <Clock className="w-6 h-6 text-blue-600" />
             <h1 className="text-xl font-bold text-gray-900">Registro de Ponto</h1>
+          </div>
+          <div className="flex items-center gap-2">
+            {!online && (
+              <Badge variant="destructive" className="gap-1">
+                <WifiOff className="w-3 h-3" /> Offline
+              </Badge>
+            )}
+            {pendingCount > 0 && (
+              <Badge
+                variant="secondary"
+                className="gap-1 cursor-pointer"
+                onClick={() => online && !syncing && syncNow()}
+                title={online ? 'Clique para sincronizar agora' : 'Aguardando internet'}
+              >
+                <CloudUpload className="w-3 h-3" />
+                {syncing ? 'Enviando…' : `${pendingCount} pendente${pendingCount > 1 ? 's' : ''}`}
+              </Badge>
+            )}
           </div>
         </div>
       </div>

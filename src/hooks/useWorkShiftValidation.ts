@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useOptimizedAuth } from '@/contexts/OptimizedAuthContext';
+import { loadOfflineCache, saveOfflineCache, isCacheFresh } from '@/utils/offlineCache';
 
 interface AllowedButtons {
   clock_in: boolean;
@@ -21,6 +22,19 @@ interface ShiftTolerances {
   early_tolerance_minutes: number;
   late_tolerance_minutes: number;
   break_tolerance_minutes: number;
+}
+
+async function persistShiftCache(
+  userId: string,
+  shift: { hasShift: boolean; schedules: Record<number, any>; tolerances: any; shiftName?: string }
+) {
+  const existing = await loadOfflineCache(userId);
+  await saveOfflineCache({
+    userId,
+    allowedLocations: existing?.allowedLocations || [],
+    shift,
+    cachedAt: Date.now(),
+  });
 }
 
 export const useWorkShiftValidation = () => {
@@ -51,6 +65,29 @@ export const useWorkShiftValidation = () => {
       try {
         setLoading(true);
 
+        // OFFLINE: read from local cache (allowed_locations + shift) and exit early.
+        if (typeof navigator !== 'undefined' && !navigator.onLine) {
+          const cache = await loadOfflineCache(user.id);
+          if (cache && isCacheFresh(cache) && cache.shift) {
+            const dayOfWeek = new Date().getDay();
+            const today = cache.shift.schedules[dayOfWeek];
+            setHasShift(cache.shift.hasShift);
+            setShiftTolerances(cache.shift.tolerances);
+            setShiftSchedule(today || null);
+            setCurrentShiftMessage(
+              cache.shift.shiftName
+                ? `Turno: ${cache.shift.shiftName} (offline)`
+                : 'Modo livre - sem restrições de horário'
+            );
+          } else {
+            setHasShift(false);
+            setShiftSchedule(null);
+            setCurrentShiftMessage('Modo livre - sem restrições de horário');
+          }
+          setLoading(false);
+          return;
+        }
+
         // 1. Buscar perfil do usuário
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
@@ -73,6 +110,8 @@ export const useWorkShiftValidation = () => {
           setHasShift(false);
           setCurrentShiftMessage('Modo livre - sem restrições de horário');
           setShiftSchedule(null);
+          // Cache: free mode
+          await persistShiftCache(user.id, { hasShift: false, schedules: {}, tolerances: shiftTolerances });
           setLoading(false);
           return;
         }
@@ -138,6 +177,27 @@ export const useWorkShiftValidation = () => {
           break_start_time: todaySchedule.break_start_time,
           break_end_time: todaySchedule.break_end_time,
           end_time: todaySchedule.end_time
+        });
+
+        // Persist full week schedule to offline cache
+        const schedulesMap: Record<number, any> = {};
+        for (const s of schedulesData as any[]) {
+          schedulesMap[s.day_of_week] = {
+            start_time: s.start_time,
+            break_start_time: s.break_start_time,
+            break_end_time: s.break_end_time,
+            end_time: s.end_time,
+          };
+        }
+        await persistShiftCache(user.id, {
+          hasShift: true,
+          schedules: schedulesMap,
+          tolerances: {
+            early_tolerance_minutes: shiftData.early_tolerance_minutes || 15,
+            late_tolerance_minutes: shiftData.late_tolerance_minutes || 15,
+            break_tolerance_minutes: shiftData.break_tolerance_minutes || 15,
+          },
+          shiftName: shiftData.name,
         });
 
         setCurrentShiftMessage(`Turno: ${shiftData.name}`);
