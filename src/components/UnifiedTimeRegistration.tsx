@@ -75,11 +75,35 @@ const UnifiedTimeRegistration: React.FC = () => {
 
   const isRemote = profile?.use_location_tracking === false;
 
-  // Carregar localizações ativas
+  const online = useOnlineStatus();
+  const { pendingCount, syncing, syncNow } = useOfflineSync();
+
+  // Carregar localizações ativas (com fallback offline)
   useEffect(() => {
     const loadAllowed = async () => {
       try {
         setLoadingLocations(true);
+
+        // OFFLINE: ler do cache local
+        if (!navigator.onLine) {
+          if (profile?.id) {
+            const cache = await loadOfflineCache(profile.id);
+            if (cache && isCacheFresh(cache)) {
+              setAllowedLocations(cache.allowedLocations || []);
+            } else {
+              setAllowedLocations([]);
+              toast({
+                title: 'Sem conexão',
+                description: cache
+                  ? `Cache expirado (${ageInDays(cache)}d). Conecte-se à internet para atualizar as obras permitidas.`
+                  : 'Conecte-se à internet ao menos uma vez para baixar as obras permitidas.',
+                variant: 'destructive',
+              });
+            }
+          }
+          return;
+        }
+
         const { data, error } = await supabase
           .from('allowed_locations')
           .select('*')
@@ -93,6 +117,17 @@ const UnifiedTimeRegistration: React.FC = () => {
           range_meters: Number(loc.range_meters)
         }));
         setAllowedLocations(formatted);
+
+        // Persist no cache offline (mantém shift cache existente)
+        if (profile?.id) {
+          const existing = await loadOfflineCache(profile.id);
+          await saveOfflineCache({
+            userId: profile.id,
+            allowedLocations: formatted,
+            shift: existing?.shift || null,
+            cachedAt: Date.now(),
+          });
+        }
       } catch (err) {
         console.error('Erro ao carregar localizações permitidas:', err);
         toast({ title: 'Erro', description: 'Falha ao carregar localizações permitidas.', variant: 'destructive' });
@@ -102,7 +137,7 @@ const UnifiedTimeRegistration: React.FC = () => {
       }
     };
     loadAllowed();
-  }, [toast]);
+  }, [toast, profile?.id, online]);
 
   // Cooldown
   useEffect(() => {
