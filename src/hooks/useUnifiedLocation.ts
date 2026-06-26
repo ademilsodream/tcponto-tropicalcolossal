@@ -99,38 +99,36 @@ export const useUnifiedLocation = (
   const { toast } = useToast();
   const watchIdRef = useRef<number | null>(null);
 
-  // Função para validar qualidade do GPS
+  // Função para validar qualidade do GPS (thresholds rigorosos)
   const validateGPSQuality = useCallback((accuracy: number) => {
-    if (accuracy <= 15) {
-      return {
-        quality: 'EXCELENTE' as const,
-        acceptable: true,
-        confidence: 95,
-        message: 'GPS com excelente precisão'
-      };
-    } else if (accuracy <= 35) {
-      return {
-        quality: 'BOM' as const,
-        acceptable: true,
-        confidence: 80,
-        message: 'GPS com boa precisão'
-      };
-    } else if (accuracy <= 100) {
-      return {
-        quality: 'REGULAR' as const,
-        acceptable: true,
-        confidence: 60,
-        message: 'GPS com precisão regular'
-      };
+    if (accuracy <= 10) {
+      return { quality: 'EXCELENTE' as const, acceptable: true, confidence: 95, message: 'GPS com excelente precisão' };
+    } else if (accuracy <= 25) {
+      return { quality: 'BOM' as const, acceptable: true, confidence: 80, message: 'GPS com boa precisão' };
+    } else if (accuracy <= 40) {
+      return { quality: 'REGULAR' as const, acceptable: true, confidence: 60, message: 'GPS com precisão regular' };
     } else {
-      return {
-        quality: 'RUIM' as const,
-        acceptable: false,
-        confidence: 30,
-        message: 'GPS com baixa precisão'
-      };
+      return { quality: 'RUIM' as const, acceptable: false, confidence: 30, message: `GPS impreciso (${Math.round(accuracy)}m). Vá a céu aberto.` };
     }
   }, []);
+
+  // Forçar leitura fresca da localização (sem cache)
+  const forceFreshLocation = useCallback(async (): Promise<UnifiedLocationResult> => {
+    UnifiedLocationSystem.clearCache();
+    setIsValidating(true);
+    try {
+      const result = await UnifiedLocationSystem.finalValidation(allowedLocations);
+      setValidationResult(result);
+      setCanRegister(result.valid);
+      if (result.location) {
+        setLocation(result.location);
+        setGpsQuality(validateGPSQuality(result.location.accuracy));
+      }
+      return result;
+    } finally {
+      setIsValidating(false);
+    }
+  }, [allowedLocations, validateGPSQuality]);
 
   // Função para obter localização atual
   const getCurrentLocation = useCallback(async () => {
