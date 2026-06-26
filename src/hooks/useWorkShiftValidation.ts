@@ -52,6 +52,29 @@ export const useWorkShiftValidation = () => {
       try {
         setLoading(true);
 
+        // OFFLINE: read from local cache (allowed_locations + shift) and exit early.
+        if (typeof navigator !== 'undefined' && !navigator.onLine) {
+          const cache = await loadOfflineCache(user.id);
+          if (cache && isCacheFresh(cache) && cache.shift) {
+            const dayOfWeek = new Date().getDay();
+            const today = cache.shift.schedules[dayOfWeek];
+            setHasShift(cache.shift.hasShift);
+            setShiftTolerances(cache.shift.tolerances);
+            setShiftSchedule(today || null);
+            setCurrentShiftMessage(
+              cache.shift.shiftName
+                ? `Turno: ${cache.shift.shiftName} (offline)`
+                : 'Modo livre - sem restrições de horário'
+            );
+          } else {
+            setHasShift(false);
+            setShiftSchedule(null);
+            setCurrentShiftMessage('Modo livre - sem restrições de horário');
+          }
+          setLoading(false);
+          return;
+        }
+
         // 1. Buscar perfil do usuário
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
@@ -61,6 +84,12 @@ export const useWorkShiftValidation = () => {
 
         if (profileError && profileError.code !== 'PGRST116') {
           console.warn('Erro ao buscar perfil:', profileError);
+          setHasShift(false);
+          setCurrentShiftMessage('Modo livre - sem restrições de horário');
+          setShiftSchedule(null);
+          setLoading(false);
+          return;
+        }
           setHasShift(false);
           setCurrentShiftMessage('Modo livre - sem restrições de horário');
           setShiftSchedule(null);
