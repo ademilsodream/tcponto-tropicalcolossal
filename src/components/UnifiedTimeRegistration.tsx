@@ -315,32 +315,48 @@ const UnifiedTimeRegistration: React.FC = () => {
         }
       }
 
-      if (existing?.id) {
-        // UPDATE
-        const updateData: any = { locations: mergedLocations, updated_at: now.toISOString() };
-        updateData[action] = actionTime;
-        const { error } = await supabase.from('time_records').update(updateData).eq('id', existing.id);
-        if (error) throw error;
-      } else {
-        // INSERT novo registro do dia
-        const insertData: any = {
-          user_id: profile.id,
-          date: today,
-          status: 'active',
-          locations: mergedLocations,
-        };
-        insertData[action] = actionTime;
-        const { error } = await supabase.from('time_records').insert(insertData);
-        if (error) throw error;
-      }
-
-      await fetchLastRegistration();
-      toast({ title: 'Sucesso', description: `${{
+      const labelMap: Record<string, string> = {
         clock_in: 'Entrada',
         lunch_start: 'Início do almoço',
         lunch_end: 'Volta do almoço',
-        clock_out: 'Saída'
-      }[action]} registrada.` });
+        clock_out: 'Saída',
+      };
+
+      if (!navigator.onLine) {
+        // OFFLINE: enfileirar localmente — validação de obra já passou contra o cache.
+        await enqueueRegistration({
+          user_id: profile.id,
+          date: today,
+          action,
+          action_time: actionTime,
+          locations: { [action]: entry },
+        });
+        await fetchLastRegistration();
+        toast({
+          title: 'Ponto registrado offline',
+          description: `${labelMap[action]} será sincronizada quando houver internet.`,
+        });
+      } else {
+        if (existing?.id) {
+          const updateData: any = { locations: mergedLocations, updated_at: now.toISOString() };
+          updateData[action] = actionTime;
+          const { error } = await supabase.from('time_records').update(updateData).eq('id', existing.id);
+          if (error) throw error;
+        } else {
+          const insertData: any = {
+            user_id: profile.id,
+            date: today,
+            status: 'active',
+            locations: mergedLocations,
+          };
+          insertData[action] = actionTime;
+          const { error } = await supabase.from('time_records').insert(insertData);
+          if (error) throw error;
+        }
+
+        await fetchLastRegistration();
+        toast({ title: 'Sucesso', description: `${labelMap[action]} registrada.` });
+      }
 
       const end = Date.now() + COOLDOWN_MS;
       setCooldownEndTime(end);
