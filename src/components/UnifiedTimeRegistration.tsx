@@ -18,6 +18,12 @@ import LocationMap from './LocationMap';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AnnouncementNotification } from './AnnouncementNotification';
 import { useWorkShiftValidation } from '@/hooks/useWorkShiftValidation';
+import { loadOfflineCache, saveOfflineCache, isCacheFresh, ageInDays } from '@/utils/offlineCache';
+import { enqueueRegistration } from '@/utils/offlineQueue';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { useOfflineSync } from '@/hooks/useOfflineSync';
+import { Badge } from '@/components/ui/badge';
+import { WifiOff, CloudUpload } from 'lucide-react';
 
 const COOLDOWN_MS = 20 * 60 * 1000; // 20 minutos
 
