@@ -37,6 +37,14 @@ function uuid(): string {
 export async function enqueueRegistration(
   entry: Omit<OfflineEntry, 'client_id' | 'created_at' | 'attempts' | 'status'>
 ): Promise<OfflineEntry> {
+  const existingQueue = await listQueue();
+  const existing = existingQueue.find((queued) =>
+    queued.user_id === entry.user_id &&
+    queued.date === entry.date &&
+    queued.action === entry.action
+  );
+  if (existing) return existing;
+
   const full: OfflineEntry = {
     ...entry,
     client_id: uuid(),
