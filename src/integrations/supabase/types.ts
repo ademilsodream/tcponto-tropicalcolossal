@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.1"
+    PostgrestVersion: "14.17"
   }
   public: {
     Tables: {
@@ -173,31 +173,40 @@ export type Database = {
       }
       anexos_despesa: {
         Row: {
-          caminho_arquivo: string
+          caminho_arquivo: string | null
           created_at: string
           despesa_id: string
+          drive_file_id: string | null
+          drive_view_link: string | null
           id: string
           nome_arquivo: string
+          storage_provider: string
           tamanho_arquivo: number
           tipo_arquivo: string
           updated_at: string
         }
         Insert: {
-          caminho_arquivo: string
+          caminho_arquivo?: string | null
           created_at?: string
           despesa_id: string
+          drive_file_id?: string | null
+          drive_view_link?: string | null
           id?: string
           nome_arquivo: string
+          storage_provider?: string
           tamanho_arquivo: number
           tipo_arquivo: string
           updated_at?: string
         }
         Update: {
-          caminho_arquivo?: string
+          caminho_arquivo?: string | null
           created_at?: string
           despesa_id?: string
+          drive_file_id?: string | null
+          drive_view_link?: string | null
           id?: string
           nome_arquivo?: string
+          storage_provider?: string
           tamanho_arquivo?: number
           tipo_arquivo?: string
           updated_at?: string
@@ -214,31 +223,40 @@ export type Database = {
       }
       anexos_fatura_receita: {
         Row: {
-          caminho_arquivo: string
+          caminho_arquivo: string | null
           created_at: string
+          drive_file_id: string | null
+          drive_view_link: string | null
           fatura_id: string
           id: string
           nome_arquivo: string
+          storage_provider: string
           tamanho_arquivo: number
           tipo_arquivo: string
           updated_at: string
         }
         Insert: {
-          caminho_arquivo: string
+          caminho_arquivo?: string | null
           created_at?: string
+          drive_file_id?: string | null
+          drive_view_link?: string | null
           fatura_id: string
           id?: string
           nome_arquivo: string
+          storage_provider?: string
           tamanho_arquivo: number
           tipo_arquivo: string
           updated_at?: string
         }
         Update: {
-          caminho_arquivo?: string
+          caminho_arquivo?: string | null
           created_at?: string
+          drive_file_id?: string | null
+          drive_view_link?: string | null
           fatura_id?: string
           id?: string
           nome_arquivo?: string
+          storage_provider?: string
           tamanho_arquivo?: number
           tipo_arquivo?: string
           updated_at?: string
@@ -3216,8 +3234,92 @@ export type Database = {
           },
         ]
       }
+      patrimonios_caixas: {
+        Row: {
+          codigo: string
+          created_at: string
+          descricao: string | null
+          foto_url: string | null
+          id: string
+          nome: string
+          obra_atual_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          codigo: string
+          created_at?: string
+          descricao?: string | null
+          foto_url?: string | null
+          id?: string
+          nome: string
+          obra_atual_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          descricao?: string | null
+          foto_url?: string | null
+          id?: string
+          nome?: string
+          obra_atual_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patrimonios_caixas_obra_atual_id_fkey"
+            columns: ["obra_atual_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patrimonios_caixas_ferramentas_simples: {
+        Row: {
+          caixa_id: string
+          created_at: string
+          ferramenta_simples_id: string
+          id: string
+          quantidade: number
+          updated_at: string
+        }
+        Insert: {
+          caixa_id: string
+          created_at?: string
+          ferramenta_simples_id: string
+          id?: string
+          quantidade?: number
+          updated_at?: string
+        }
+        Update: {
+          caixa_id?: string
+          created_at?: string
+          ferramenta_simples_id?: string
+          id?: string
+          quantidade?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patrimonios_caixas_ferramentas_simpl_ferramenta_simples_id_fkey"
+            columns: ["ferramenta_simples_id"]
+            isOneToOne: false
+            referencedRelation: "patrimonios_ferramentas_simples"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patrimonios_caixas_ferramentas_simples_caixa_id_fkey"
+            columns: ["caixa_id"]
+            isOneToOne: false
+            referencedRelation: "patrimonios_caixas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patrimonios_ferramentas: {
         Row: {
+          caixa_id: string | null
           created_at: string
           estado: string
           foto_url: string | null
@@ -3233,6 +3335,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          caixa_id?: string | null
           created_at?: string
           estado?: string
           foto_url?: string | null
@@ -3248,6 +3351,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          caixa_id?: string | null
           created_at?: string
           estado?: string
           foto_url?: string | null
@@ -3264,6 +3368,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "patrimonios_ferramentas_caixa_id_fkey"
+            columns: ["caixa_id"]
+            isOneToOne: false
+            referencedRelation: "patrimonios_caixas"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "patrimonios_ferramentas_obra_atual_id_fkey"
             columns: ["obra_atual_id"]
             isOneToOne: false
@@ -3274,6 +3385,8 @@ export type Database = {
       }
       patrimonios_ferramentas_movimentos: {
         Row: {
+          caixa_id: string | null
+          caixa_nome: string | null
           created_at: string
           created_by: string | null
           data_movimento: string
@@ -3292,6 +3405,8 @@ export type Database = {
           transferencia_escopo: string | null
         }
         Insert: {
+          caixa_id?: string | null
+          caixa_nome?: string | null
           created_at?: string
           created_by?: string | null
           data_movimento?: string
@@ -3310,6 +3425,8 @@ export type Database = {
           transferencia_escopo?: string | null
         }
         Update: {
+          caixa_id?: string | null
+          caixa_nome?: string | null
           created_at?: string
           created_by?: string | null
           data_movimento?: string
@@ -3328,6 +3445,13 @@ export type Database = {
           transferencia_escopo?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "patrimonios_ferramentas_movimentos_caixa_id_fkey"
+            columns: ["caixa_id"]
+            isOneToOne: false
+            referencedRelation: "patrimonios_caixas"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "patrimonios_ferramentas_movimentos_ferramenta_id_fkey"
             columns: ["ferramenta_id"]
@@ -3350,6 +3474,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      patrimonios_ferramentas_simples: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       patrimonios_veiculos: {
         Row: {
@@ -3875,6 +4020,7 @@ export type Database = {
         Row: {
           address: string | null
           admission_date: string | null
+          atividade_aberta: boolean
           birth_date: string | null
           can_access_tcobras: boolean
           can_register_time: boolean
@@ -3896,6 +4042,7 @@ export type Database = {
           nome_seguradora_contratado: string | null
           numero_apolice_acidente: string | null
           numero_apolice_contratado: string | null
+          numero_atividade: string | null
           overtime_rate: number | null
           periodo_acidente_fim: string | null
           periodo_acidente_inicio: string | null
@@ -3913,6 +4060,7 @@ export type Database = {
         Insert: {
           address?: string | null
           admission_date?: string | null
+          atividade_aberta?: boolean
           birth_date?: string | null
           can_access_tcobras?: boolean
           can_register_time?: boolean
@@ -3934,6 +4082,7 @@ export type Database = {
           nome_seguradora_contratado?: string | null
           numero_apolice_acidente?: string | null
           numero_apolice_contratado?: string | null
+          numero_atividade?: string | null
           overtime_rate?: number | null
           periodo_acidente_fim?: string | null
           periodo_acidente_inicio?: string | null
@@ -3951,6 +4100,7 @@ export type Database = {
         Update: {
           address?: string | null
           admission_date?: string | null
+          atividade_aberta?: boolean
           birth_date?: string | null
           can_access_tcobras?: boolean
           can_register_time?: boolean
@@ -3972,6 +4122,7 @@ export type Database = {
           nome_seguradora_contratado?: string | null
           numero_apolice_acidente?: string | null
           numero_apolice_contratado?: string | null
+          numero_atividade?: string | null
           overtime_rate?: number | null
           periodo_acidente_fim?: string | null
           periodo_acidente_inicio?: string | null
@@ -5920,6 +6071,7 @@ export type Database = {
         Returns: string
       }
       expire_old_hour_bank_hours: { Args: never; Returns: undefined }
+      gerar_proximo_numero_caixa: { Args: never; Returns: string }
       gerar_proximo_numero_patrimonio: { Args: never; Returns: string }
       get_audit_logs: {
         Args: {
