@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
@@ -19,13 +19,30 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AnnouncementNotification } from './AnnouncementNotification';
 import { useWorkShiftValidation } from '@/hooks/useWorkShiftValidation';
 import { loadOfflineCache, saveOfflineCache, isCacheFresh, ageInDays } from '@/utils/offlineCache';
-import { enqueueRegistration } from '@/utils/offlineQueue';
+import { enqueueRegistration, listQueue } from '@/utils/offlineQueue';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { Badge } from '@/components/ui/badge';
 import { WifiOff, CloudUpload } from 'lucide-react';
+import {
+  getRegistrationErrorMessage,
+  isRecoverableNetworkError,
+  logRegistrationAttempt,
+} from '@/utils/timeRegistrationReliability';
 
 const COOLDOWN_MS = 20 * 60 * 1000; // 20 minutos
+
+const withTimeout = async <T,>(operation: PromiseLike<T>, timeoutMs = 12000): Promise<T> => {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error('Tempo limite de conexão excedido')), timeoutMs);
+  });
+  try {
+    return await Promise.race([Promise.resolve(operation), timeout]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+};
 
 // Helper para obter GPS diretamente caso o hook não tenha fornecido
 const getCurrentGPS = (): Promise<{ latitude: number; longitude: number; accuracy?: number; timestamp: number } | null> => {
@@ -64,11 +81,13 @@ const getNextActionFromRecord = (rec: any | null): 'clock_in' | 'lunch_start' | 
 
 const UnifiedTimeRegistration: React.FC = () => {
   const [isRegistering, setIsRegistering] = useState(false);
+  const [registrationPhase, setRegistrationPhase] = useState<'idle' | 'gps' | 'saving'>('idle');
   const [lastRegistration, setLastRegistration] = useState<TimeRegistration | null>(null);
   const [allowedLocations, setAllowedLocations] = useState<AllowedLocation[]>([]);
   const [loadingLocations, setLoadingLocations] = useState<boolean>(true);
   const [cooldownEndTime, setCooldownEndTime] = useState<number | null>(null);
   const [remainingCooldown, setRemainingCooldown] = useState<number | null>(null);
+  const registrationLockRef = useRef(false);
   const { user, profile } = useOptimizedAuth();
   const { toast } = useToast();
   const shiftValidation = useWorkShiftValidation();
@@ -76,7 +95,7 @@ const UnifiedTimeRegistration: React.FC = () => {
   const isRemote = profile?.use_location_tracking === false;
 
   const online = useOnlineStatus();
-  const { pendingCount, syncing, syncNow } = useOfflineSync();
+  const { pendingCount, syncing, syncNow, refreshCount } = useOfflineSync();
 
   // Carregar localizações ativas (com fallback offline)
   useEffect(() => {
@@ -176,62 +195,85 @@ const UnifiedTimeRegistration: React.FC = () => {
 
   const fetchLastRegistration = useCallback(async () => {
     if (!profile?.id) return;
+    const today = format(new Date(), 'yyyy-MM-dd');
+    let serverRecord: TimeRegistration | null = null;
     try {
-      const today = new Date().toISOString().split('T')[0];
-      const { data, error } = await supabase
-        .from('time_records')
-        .select('*')
-        .eq('user_id', profile.id)
-        .eq('date', today)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (!error && data) setLastRegistration(data as TimeRegistration);
+      if (navigator.onLine) {
+        const { data, error } = await supabase
+          .from('time_records')
+          .select('*')
+          .eq('user_id', profile.id)
+          .eq('date', today)
+          .in('status', ['active', 'approved'])
+          .maybeSingle();
+        if (error) throw error;
+        serverRecord = data as TimeRegistration | null;
+      }
     } catch (err) {
       console.error('Erro ao buscar último registro:', err);
     }
+
+    const pending = (await listQueue()).filter((entry) =>
+      entry.user_id === profile.id && entry.date === today
+    );
+    const effective: any = serverRecord
+      ? { ...serverRecord, locations: { ...((serverRecord.locations as Record<string, any>) || {}) } }
+      : { user_id: profile.id, date: today, status: 'active', locations: {} };
+
+    for (const entry of pending) {
+      if (!effective[entry.action]) effective[entry.action] = entry.action_time;
+      effective.locations = { ...effective.locations, ...entry.locations };
+    }
+
+    setLastRegistration(serverRecord || pending.length > 0 ? effective as TimeRegistration : null);
   }, [profile?.id]);
 
   useEffect(() => { fetchLastRegistration(); }, [fetchLastRegistration]);
 
   const handleTimeRegistration = async () => {
+    if (registrationLockRef.current) return;
     if (!profile) {
       toast({ title: 'Erro', description: 'Perfil não disponível.', variant: 'destructive' });
       return;
     }
 
-    const today = new Date().toISOString().split('T')[0];
-    const now = new Date();
-
-    // garantir que temos o registro do dia mais recente
-    let existing = lastRegistration;
-    if (!existing || existing.date !== today) {
-      try {
-        const { data } = await supabase
-          .from('time_records')
-          .select('*')
-          .eq('user_id', profile.id)
-          .eq('date', today)
-          .eq('status', 'active')
-          .maybeSingle();
-        if (data) existing = data as any;
-      } catch {}
-    }
-
-    const action = getNextActionFromRecord(existing);
-    if (!action) {
-      toast({ title: 'Concluído', description: 'Todas as marcações do dia já foram registradas.' });
+    if (cooldownEndTime && cooldownEndTime > Date.now()) {
+      toast({ title: 'Aguarde', description: `O próximo registro estará disponível em ${formatRemaining(cooldownEndTime - Date.now())}.` });
       return;
     }
 
-    // Coletar localização FRESCA no momento exato da batida (sanity check)
-    let lat = location?.latitude ?? 0;
-    let lon = location?.longitude ?? 0;
-    let ts = location ? new Date(location.timestamp) : now;
-    let freshValidation = validationResult;
+    registrationLockRef.current = true;
+    setIsRegistering(true);
+    setRegistrationPhase('gps');
 
-    if (!isRemote) {
-      try {
+    const today = format(new Date(), 'yyyy-MM-dd');
+    const now = new Date();
+
+    try {
+      logRegistrationAttempt({ stage: 'starting' });
+
+      // Combinar a linha do servidor com batidas pendentes antes de definir a próxima ação.
+      let existing: any = lastRegistration?.date === today ? { ...lastRegistration } : null;
+      const pendingToday = (await listQueue()).filter((entry) => entry.user_id === profile.id && entry.date === today);
+      for (const pending of pendingToday) {
+        existing ||= { user_id: profile.id, date: today, status: 'active', locations: {} };
+        if (!existing[pending.action]) existing[pending.action] = pending.action_time;
+        existing.locations = { ...(existing.locations || {}), ...pending.locations };
+      }
+
+      const action = getNextActionFromRecord(existing);
+      if (!action) {
+        toast({ title: 'Concluído', description: 'Todas as marcações do dia já foram registradas.' });
+        return;
+      }
+
+      // Coletar localização fresca no momento exato da batida.
+      let lat = location?.latitude ?? 0;
+      let lon = location?.longitude ?? 0;
+      let ts = location ? new Date(location.timestamp) : now;
+      let freshValidation = validationResult;
+
+      if (!isRemote) {
         toast({ title: 'Aguarde', description: 'Confirmando localização GPS...', duration: 1500 });
         const fresh = await forceFreshLocation();
         freshValidation = fresh;
@@ -240,22 +282,25 @@ const UnifiedTimeRegistration: React.FC = () => {
           lon = fresh.location.longitude;
           ts = new Date(fresh.location.timestamp);
         }
+        logRegistrationAttempt({
+          stage: 'gps',
+          action,
+          gpsAccuracy: fresh.gpsAccuracy,
+          distance: fresh.distance,
+          locationName: fresh.closestLocation?.name,
+          message: fresh.message,
+        });
         if (!fresh.valid) {
-          toast({ title: 'Localização não confirmada', description: fresh.message || 'Sinal GPS instável, tente novamente em alguns segundos.', variant: 'destructive' });
+          toast({ title: 'Localização não confirmada', description: fresh.message || 'Sinal GPS instável. Tente novamente.', variant: 'destructive' });
           return;
         }
-      } catch (e: any) {
-        toast({ title: 'Erro de GPS', description: e?.message || 'Não foi possível confirmar a localização.', variant: 'destructive' });
-        return;
+      } else if (!lat || !lon) {
+        const gps = await getCurrentGPS();
+        if (gps) { lat = gps.latitude; lon = gps.longitude; ts = new Date(gps.timestamp); }
       }
-    } else if (!lat || !lon) {
-      const gps = await getCurrentGPS();
-      if (gps) { lat = gps.latitude; lon = gps.longitude; ts = new Date(gps.timestamp); }
-    }
 
-    setIsRegistering(true);
+      setRegistrationPhase('saving');
 
-    try {
       // Montar entrada locations[action]
       let entry: any = {};
       if (isRemote) {
@@ -323,8 +368,7 @@ const UnifiedTimeRegistration: React.FC = () => {
         clock_out: 'Saída',
       };
 
-      if (!navigator.onLine) {
-        // OFFLINE: enfileirar localmente — validação de obra já passou contra o cache.
+      const queueLocally = async () => {
         await enqueueRegistration({
           user_id: profile.id,
           date: today,
@@ -332,41 +376,74 @@ const UnifiedTimeRegistration: React.FC = () => {
           action_time: actionTime,
           locations: { [action]: entry },
         });
+        logRegistrationAttempt({
+          stage: 'queued',
+          action,
+          gpsAccuracy: freshValidation?.gpsAccuracy,
+          distance: freshValidation?.distance,
+          locationName: freshValidation?.closestLocation?.name,
+        });
+        await refreshCount();
         await fetchLastRegistration();
+      };
+
+      let preserved = false;
+      if (!navigator.onLine) {
+        // OFFLINE: enfileirar localmente — validação de obra já passou contra o cache.
+        await queueLocally();
+        preserved = true;
         toast({
           title: 'Ponto registrado offline',
           description: `${labelMap[action]} será sincronizada quando houver internet.`,
         });
       } else {
-        if (existing?.id) {
-          const updateData: any = { locations: mergedLocations, updated_at: now.toISOString() };
-          updateData[action] = actionTime;
-          const { error } = await supabase.from('time_records').update(updateData).eq('id', existing.id);
-          if (error) throw error;
-        } else {
-          const insertData: any = {
-            user_id: profile.id,
-            date: today,
-            status: 'active',
-            locations: mergedLocations,
-          };
-          insertData[action] = actionTime;
-          const { error } = await supabase.from('time_records').insert(insertData);
-          if (error) throw error;
-        }
+        try {
+          if (existing?.id) {
+            const updateData: any = { locations: mergedLocations, updated_at: now.toISOString() };
+            updateData[action] = actionTime;
+            const { error } = await withTimeout(supabase.from('time_records').update(updateData).eq('id', existing.id));
+            if (error) throw error;
+          } else {
+            const insertData: any = {
+              user_id: profile.id,
+              date: today,
+              status: 'active',
+              locations: mergedLocations,
+            };
+            insertData[action] = actionTime;
+            const { error } = await withTimeout(supabase.from('time_records').insert(insertData));
+            if (error) throw error;
+          }
 
-        await fetchLastRegistration();
-        toast({ title: 'Sucesso', description: `${labelMap[action]} registrada.` });
+          preserved = true;
+          logRegistrationAttempt({ stage: 'saved', action, gpsAccuracy: freshValidation?.gpsAccuracy, distance: freshValidation?.distance, locationName: freshValidation?.closestLocation?.name });
+          await fetchLastRegistration();
+          toast({ title: 'Ponto registrado', description: `${labelMap[action]} foi enviada com sucesso.` });
+        } catch (saveError) {
+          if (!isRecoverableNetworkError(saveError)) throw saveError;
+          await queueLocally();
+          preserved = true;
+          toast({
+            title: 'Ponto guardado no aparelho',
+            description: `${labelMap[action]} será enviada automaticamente quando a ligação estabilizar.`,
+          });
+        }
       }
 
-      const end = Date.now() + COOLDOWN_MS;
-      setCooldownEndTime(end);
-      localStorage.setItem('timeRegistrationCooldown', String(end));
+      if (preserved) {
+        const end = Date.now() + COOLDOWN_MS;
+        setCooldownEndTime(end);
+        setRemainingCooldown(COOLDOWN_MS);
+        localStorage.setItem('timeRegistrationCooldown', String(end));
+      }
     } catch (e: any) {
       console.error('Falha ao registrar:', e);
-      toast({ title: 'Erro', description: 'Falha ao registrar o ponto.', variant: 'destructive' });
+      logRegistrationAttempt({ stage: 'failed', errorCode: e?.code, message: e?.message });
+      toast({ title: 'Não foi possível registrar', description: getRegistrationErrorMessage(e), variant: 'destructive' });
     } finally {
+      registrationLockRef.current = false;
       setIsRegistering(false);
+      setRegistrationPhase('idle');
     }
   };
 
@@ -418,7 +495,7 @@ const UnifiedTimeRegistration: React.FC = () => {
                 size="lg" 
                 className="h-16 text-lg font-semibold"
               >
-                {isRegistering ? 'Registrando...' : 'Registrar'}
+                {registrationPhase === 'gps' ? 'Confirmando GPS…' : registrationPhase === 'saving' ? 'Gravando…' : 'Registrar'}
               </Button>
               <Button 
                 variant="outline" 
