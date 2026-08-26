@@ -118,7 +118,16 @@ export const useUnifiedLocation = (
     UnifiedLocationSystem.clearCache();
     setIsValidating(true);
     try {
-      const result = await UnifiedLocationSystem.finalValidation(allowedLocations);
+      let result = await UnifiedLocationSystem.finalValidation(allowedLocations);
+
+      // Uma segunda coleta é permitida apenas quando o próprio GPS não estabilizou.
+      // Estar fora do raio da obra continua sendo recusado imediatamente.
+      if (!result.valid && (!result.location || result.needsCalibration)) {
+        await new Promise((resolve) => setTimeout(resolve, 750));
+        UnifiedLocationSystem.clearCache();
+        result = await UnifiedLocationSystem.finalValidation(allowedLocations);
+      }
+
       setValidationResult(result);
       setCanRegister(result.valid);
       if (result.location) {
@@ -311,13 +320,6 @@ export const useUnifiedLocation = (
       initializeLocation();
     }
   }, [allowedLocations, validateLocation, updateDebugStats]);
-
-  // Auto-validar quando localização mudar
-  useEffect(() => {
-    if (autoValidate && location && allowedLocations.length > 0) {
-      validateLocation();
-    }
-  }, [location, allowedLocations, autoValidate, validateLocation]);
 
   // Atualizar estatísticas periodicamente
   useEffect(() => {

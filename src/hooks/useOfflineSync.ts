@@ -3,7 +3,7 @@
  * Mounted once at the App root. Fires on `online`, periodically while pending
  * entries exist, and exposes the current pending count for UI badges.
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { listQueue, removeEntry, updateEntry, countPending } from '@/utils/offlineQueue';
@@ -13,6 +13,7 @@ export function useOfflineSync() {
   const online = useOnlineStatus();
   const [pendingCount, setPendingCount] = useState(0);
   const [syncing, setSyncing] = useState(false);
+  const syncingRef = useRef(false);
   const { toast } = useToast();
 
   const refreshCount = useCallback(async () => {
@@ -20,7 +21,7 @@ export function useOfflineSync() {
   }, []);
 
   const syncOnce = useCallback(async () => {
-    if (syncing) return;
+    if (syncingRef.current) return;
     if (!navigator.onLine) return;
 
     const queue = await listQueue();
@@ -30,6 +31,7 @@ export function useOfflineSync() {
       return;
     }
 
+    syncingRef.current = true;
     setSyncing(true);
     let synced = 0;
 
@@ -53,15 +55,17 @@ export function useOfflineSync() {
           };
 
           if (existing?.id) {
+            if (existing[entry.action]) {
+              await removeEntry(entry.client_id);
+              synced += 1;
+              continue;
+            }
+
             const updateData: any = {
               locations: mergedLocations,
               updated_at: new Date().toISOString(),
             };
-            // Last-write-wins per action: only overwrite if missing,
-            // so two devices punching the same action keep the earliest synced.
-            if (!existing[entry.action]) {
-              updateData[entry.action] = entry.action_time;
-            }
+            updateData[entry.action] = entry.action_time;
             const { error } = await supabase
               .from('time_records')
               .update(updateData)
@@ -92,6 +96,7 @@ export function useOfflineSync() {
         }
       }
     } finally {
+      syncingRef.current = false;
       setSyncing(false);
       await refreshCount();
       if (synced > 0) {
@@ -101,7 +106,7 @@ export function useOfflineSync() {
         });
       }
     }
-  }, [syncing, toast, refreshCount]);
+  }, [toast, refreshCount]);
 
   // Sync on online + on mount
   useEffect(() => {
