@@ -452,7 +452,9 @@ const UnifiedTimeRegistration: React.FC = () => {
     }
   };
 
-  const buttonDisabled = isRegistering || (!isRemote && !canRegister) || (cooldownEndTime !== null && cooldownEndTime > Date.now());
+  // O estado prévio do GPS é apenas informativo. A decisão definitiva é feita
+  // com uma nova coleta ao tocar, evitando bloquear por uma leitura antiga/instável.
+  const buttonDisabled = isRegistering || (cooldownEndTime !== null && cooldownEndTime > Date.now());
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-blue-100">

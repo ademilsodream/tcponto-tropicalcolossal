@@ -57,7 +57,10 @@ export function isRecoverableNetworkError(error: unknown): boolean {
     'network error',
     'timeout',
     'timed out',
+    'tempo limite',
     'connection',
+    'conexão',
+    'ligação',
     'load failed',
   ].some((fragment) => text.includes(fragment));
 }
