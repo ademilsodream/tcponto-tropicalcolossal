@@ -197,6 +197,7 @@ const UnifiedTimeRegistration: React.FC = () => {
     if (!profile?.id) return;
     const today = format(new Date(), 'yyyy-MM-dd');
     let serverRecord: TimeRegistration | null = null;
+    let serverLoadFailed = false;
     try {
       if (navigator.onLine) {
         const { data, error } = await supabase
@@ -210,6 +211,7 @@ const UnifiedTimeRegistration: React.FC = () => {
         serverRecord = data as TimeRegistration | null;
       }
     } catch (err) {
+      serverLoadFailed = true;
       console.error('Erro ao buscar último registro:', err);
     }
 
@@ -225,7 +227,10 @@ const UnifiedTimeRegistration: React.FC = () => {
       effective.locations = { ...effective.locations, ...entry.locations };
     }
 
-    setLastRegistration(serverRecord || pending.length > 0 ? effective as TimeRegistration : null);
+    setLastRegistration((current) => {
+      if (serverLoadFailed && pending.length === 0 && current?.date === today) return current;
+      return serverRecord || pending.length > 0 ? effective as TimeRegistration : null;
+    });
   }, [profile?.id]);
 
   useEffect(() => { fetchLastRegistration(); }, [fetchLastRegistration]);
@@ -308,7 +313,7 @@ const UnifiedTimeRegistration: React.FC = () => {
         try { if (lat && lon) { const geo = await reverseGeocode(lat, lon); address = geo.address || 'Remoto'; } } catch {}
         entry = { address, distance: 10, latitude: lat || null, longitude: lon || null, timestamp: ts.toISOString(), locationName: 'Remoto' };
       } else {
-        if (!lat || !lon) { toast({ title: 'Erro', description: 'Localização não disponível. Tente novamente.', variant: 'destructive' }); setIsRegistering(false); return; }
+        if (!lat || !lon) { toast({ title: 'Erro', description: 'Localização não disponível. Tente novamente.', variant: 'destructive' }); return; }
         let addr = `Coordenadas: ${lat.toFixed(6)}, ${lon.toFixed(6)}`;
         try { addr = (await reverseGeocode(lat, lon)).address || addr; } catch {}
         const dist = Math.round(freshValidation?.distance ?? 0);
