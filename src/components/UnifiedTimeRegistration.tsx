@@ -544,10 +544,7 @@ const UnifiedTimeRegistration: React.FC = () => {
             </div>
             
             {/* Data e hora */}
-            <div className="mb-4">
-              <div className="text-base text-gray-600">{format(new Date(), "EEE, dd MMM yyyy", { locale: ptBR })}</div>
-              <div className="text-3xl font-bold tracking-wide mt-1">{format(new Date(), 'HH:mm:ss')}</div>
-            </div>
+            <LiveClock />
             
             {/* Cooldown */}
             {remainingCooldown !== null && (
@@ -557,7 +554,7 @@ const UnifiedTimeRegistration: React.FC = () => {
             )}
             
             {/* Status GPS */}
-            <UnifiedGPSStatus
+            <MemoGPSStatus
               loading={loading || loadingLocations}
               error={error}
               location={location}
@@ -577,12 +574,12 @@ const UnifiedTimeRegistration: React.FC = () => {
           </div>
           
           {/* Mapa */}
-          <LocationMap latitude={location?.latitude ?? 0} longitude={location?.longitude ?? 0} height={420} />
+          <LocationMap latitude={location?.latitude ?? 0} longitude={location?.longitude ?? 0} height={mapHeight} />
         </div>
  
         {/* Segundo Card - Linha dos registros */}
         <div className="w-full bg-white/90 rounded-xl shadow-sm p-4">
-          <TimeRegistrationProgress timeRecord={lastRegistration as any} />
+          <MemoProgress timeRecord={lastRegistration as any} />
         </div>
       </div>
     </div>
