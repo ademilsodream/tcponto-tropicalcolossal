@@ -12,10 +12,38 @@
 #   public *;
 #}
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# Manter números de linha para stack traces legíveis em produção.
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# ---------------------------------------------------------------------------
+# Capacitor
+# A ponte JS->nativa resolve plugins e métodos por reflexão. Sem estes keeps, o
+# R8 remove/renomeia as classes e o app abre com tela branca.
+# ---------------------------------------------------------------------------
+-keepattributes *Annotation*, JavascriptInterface, Signature, InnerClasses, EnclosingMethod
+
+-keep class com.getcapacitor.** { *; }
+-keep class * extends com.getcapacitor.Plugin { *; }
+-keep @com.getcapacitor.annotation.CapacitorPlugin class * { *; }
+-keepclassmembers class * {
+    @com.getcapacitor.PluginMethod public <methods>;
+}
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
+}
+
+# Plugins usados pelo app: App, Device, Geolocation, PushNotifications
+-keep class com.capacitorjs.plugins.** { *; }
+
+# Cordova (bridge legado incluído pelo Capacitor)
+-keep class org.apache.cordova.** { *; }
+-dontwarn org.apache.cordova.**
+
+# Código da aplicação (MainActivity é instanciada por nome pelo manifest)
+-keep class com.tcponto.app.** { *; }
+
+# Firebase / Google Play Services usados pelas push notifications
+-keep class com.google.firebase.** { *; }
+-dontwarn com.google.firebase.**
+-dontwarn com.google.android.gms.**

@@ -171,6 +171,7 @@ export const useUnifiedLocation = (
         message: 'Nenhuma localização permitida configurada'
       });
       setCanRegister(false);
+      setLoading(false);
       return;
     }
 
@@ -215,6 +216,7 @@ export const useUnifiedLocation = (
       setCanRegister(false);
     } finally {
       setIsValidating(false);
+      setLoading(false);
     }
   }, [allowedLocations, validateGPSQuality, toast]);
 
@@ -308,7 +310,10 @@ export const useUnifiedLocation = (
   // Inicializar localização uma única vez e revalidar ao voltar do plano de fundo.
   const initializedRef = useRef(false);
   useEffect(() => {
-    if (allowedLocations.length === 0) return;
+    if (allowedLocations.length === 0) {
+      setLoading(false);
+      return;
+    }
 
     const run = async () => {
       try {

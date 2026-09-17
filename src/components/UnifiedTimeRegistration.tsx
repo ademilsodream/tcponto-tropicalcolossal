@@ -32,7 +32,9 @@ import {
 
 const COOLDOWN_MS = 20 * 60 * 1000; // 20 minutos
 
-const withTimeout = async <T,>(operation: PromiseLike<T>, timeoutMs = 12000): Promise<T> => {
+const REQUEST_TIMEOUT_MS = 20000; // rede móvel em obra é lenta
+
+const withTimeout = async <T,>(operation: PromiseLike<T>, timeoutMs = REQUEST_TIMEOUT_MS): Promise<T> => {
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<never>((_, reject) => {
     timeoutId = setTimeout(() => reject(new Error('Tempo limite de conexão excedido')), timeoutMs);
@@ -41,6 +43,51 @@ const withTimeout = async <T,>(operation: PromiseLike<T>, timeoutMs = 12000): Pr
     return await Promise.race([Promise.resolve(operation), timeout]);
   } finally {
     if (timeoutId) clearTimeout(timeoutId);
+  }
+};
+
+/**
+ * Executa a query cancelando-a de facto no timeout. Com `Promise.race` o request
+ * seguia a correr: o servidor gravava, o cliente desistia e o ponto entrava duas vezes.
+ */
+const withAbortTimeout = async <T,>(
+  run: (signal: AbortSignal) => PromiseLike<T>,
+  timeoutMs = REQUEST_TIMEOUT_MS
+): Promise<T> => {
+  const controller = new AbortController();
+  let timedOut = false;
+  const timeoutId = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeoutMs);
+  try {
+    return await run(controller.signal);
+  } catch (error) {
+    if (timedOut) throw new Error('Tempo limite de conexão excedido');
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+};
+
+/** Confirma no servidor se a batida já foi gravada, antes de enfileirar de novo. */
+const serverHasAction = async (userId: string, date: string, action: string): Promise<boolean> => {
+  try {
+    const { data } = await withAbortTimeout(
+      (signal) =>
+        supabase
+          .from('time_records')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('date', date)
+          .in('status', ['active', 'approved'])
+          .abortSignal(signal)
+          .maybeSingle(),
+      8000
+    );
+    return !!(data as any)?.[action];
+  } catch {
+    return false;
   }
 };
 
@@ -384,6 +431,9 @@ const UnifiedTimeRegistration: React.FC = () => {
           longitude: lon,
           timestamp: ts.toISOString(),
           locationName: freshValidation?.closestLocation?.name || 'Desconhecido',
+          // Aceitamos leituras imprecisas desde que dentro do raio; a precisão fica
+          // gravada para o RH auditar a incerteza da batida.
+          gpsAccuracy: Number.isFinite(freshValidation?.gpsAccuracy) ? Math.round(freshValidation!.gpsAccuracy!) : null,
         };
       }
 
@@ -466,7 +516,9 @@ const UnifiedTimeRegistration: React.FC = () => {
           if (existing?.id) {
             const updateData: any = { locations: mergedLocations, updated_at: now.toISOString() };
             updateData[action] = actionTime;
-            const { error } = await withTimeout(supabase.from('time_records').update(updateData).eq('id', existing.id));
+            const { error } = await withAbortTimeout((signal) =>
+              supabase.from('time_records').update(updateData).eq('id', existing.id).abortSignal(signal)
+            );
             if (error) throw error;
           } else {
             const insertData: any = {
@@ -476,7 +528,9 @@ const UnifiedTimeRegistration: React.FC = () => {
               locations: mergedLocations,
             };
             insertData[action] = actionTime;
-            const { error } = await withTimeout(supabase.from('time_records').insert(insertData));
+            const { error } = await withAbortTimeout((signal) =>
+              supabase.from('time_records').insert(insertData).abortSignal(signal)
+            );
             if (error) throw error;
           }
 
@@ -488,12 +542,28 @@ const UnifiedTimeRegistration: React.FC = () => {
           await fetchLastRegistration();
         } catch (saveError) {
           if (!isRecoverableNetworkError(saveError)) throw saveError;
-          await queueLocally();
+
+          // O request pode ter chegado ao servidor antes de a ligação cair.
+          // Enfileirar sem confirmar duplicaria a batida.
           preserved = true;
-          toast({
-            title: 'Ponto guardado no aparelho',
-            description: `${labelMap[action]} será enviada automaticamente quando a ligação estabilizar.`,
-          });
+          if (await serverHasAction(profile.id, today, action)) {
+            logRegistrationAttempt({
+              stage: 'saved',
+              action,
+              gpsAccuracy: freshValidation?.gpsAccuracy,
+              distance: freshValidation?.distance,
+              locationName: freshValidation?.closestLocation?.name,
+            });
+            toast({ title: 'Ponto registrado', description: `${labelMap[action]} já estava confirmada no servidor.` });
+            if (lat && lon) void resolveAddressInBackground(today, action, lat, lon);
+            await fetchLastRegistration();
+          } else {
+            await queueLocally();
+            toast({
+              title: 'Ponto guardado no aparelho',
+              description: `${labelMap[action]} será enviada automaticamente quando a ligação estabilizar.`,
+            });
+          }
         }
       }
 

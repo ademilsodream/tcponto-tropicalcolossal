@@ -45,12 +45,13 @@ export interface CalibrationData {
 // Configurações otimizadas para máxima precisão
 const CONFIG = {
   // Coleta multi-amostra
-  COLLECTION_WINDOW_MS: 8000,           // janela total de coleta
+  COLLECTION_WINDOW_MS: 20000,          // janela total de coleta (GPS frio no Android)
   CONVERGENCE_SAMPLES: 3,               // amostras consecutivas estáveis
   CONVERGENCE_ACCURACY: 10,             // acc <= 10m para considerar convergido
   CONVERGENCE_SPREAD_M: 10,             // dispersão entre amostras
-  SAMPLE_DISCARD_ACCURACY: 50,          // descarta amostras com acc > 50m
-  MIN_SAMPLES_FOR_MEDIAN: 3,
+  SAMPLE_DISCARD_ACCURACY: 200,         // só descarta leituras claramente inúteis
+  MIN_SAMPLES_FOR_MEDIAN: 2,
+  FALLBACK_TIMEOUT_MS: 10000,           // leitura única quando o watch não entrega nada
 
   // Calibração
   CALIBRATION_SAMPLES: 6,
@@ -64,7 +65,7 @@ const CONFIG = {
   MAX_ACCEPTABLE_ACCURACY: 40,          // acima disso bloqueia
 
   // Range adaptativo (limitado)
-  MAX_RANGE_EXTRA_M: 25,                // tolerância extra máxima
+  MAX_RANGE_EXTRA_M: 50,                // tolerância extra máxima
 
   // Cache
   CACHE_DURATION: 8000,                 // 8s (era 30s)
@@ -120,14 +121,44 @@ const median = (nums: number[]): number => {
   return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
 };
 
+/** Leitura única, usada quando o watchPosition não entrega nenhuma amostra. */
+const singleReading = (): Promise<Sample | null> => {
+  return new Promise((resolve) => {
+    const opts = { enableHighAccuracy: true, timeout: CONFIG.FALLBACK_TIMEOUT_MS, maximumAge: 0 };
+    const accept = (lat: number, lng: number, acc: number) => {
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return resolve(null);
+      resolve({ latitude: lat, longitude: lng, accuracy: Number.isFinite(acc) ? acc : 999, timestamp: Date.now() });
+    };
+
+    if (isNativeApp() && (window as any)?.Capacitor?.Plugins?.Geolocation) {
+      (window as any).Capacitor.Plugins.Geolocation
+        .getCurrentPosition(opts)
+        .then((p: any) => accept(p.coords.latitude, p.coords.longitude, p.coords.accuracy))
+        .catch(() => resolve(null));
+      return;
+    }
+
+    if (!navigator.geolocation) return resolve(null);
+    navigator.geolocation.getCurrentPosition(
+      (p) => accept(p.coords.latitude, p.coords.longitude, p.coords.accuracy),
+      () => resolve(null),
+      opts
+    );
+  });
+};
+
 /**
  * Coleta multi-amostra com convergência.
  * - Abre watchPosition por COLLECTION_WINDOW_MS.
- * - Descarta amostras com accuracy > SAMPLE_DISCARD_ACCURACY.
- * - Para assim que 3 amostras consecutivas tiverem acc <= 10m e spread <= 10m.
- * - Senão, usa MEDIANA das 3 melhores.
+ * - Encerra assim que uma amostra confirmar que o utilizador está dentro do raio
+ *   da obra (`isWithinTarget`) — não faz sentido continuar a afinar a precisão.
+ * - Senão, para quando 3 amostras consecutivas tiverem acc <= 10m e spread <= 10m.
+ * - Sem convergência, usa MEDIANA das melhores; sem amostra nenhuma, tenta leitura única.
  */
-const collectConvergedLocation = async (forceFresh: boolean): Promise<{ location: { latitude: number; longitude: number }; accuracy: number; converged: boolean; samples: number }> => {
+const collectConvergedLocation = async (
+  forceFresh: boolean,
+  isWithinTarget?: (lat: number, lng: number, accuracy: number) => boolean
+): Promise<{ location: { latitude: number; longitude: number }; accuracy: number; converged: boolean; samples: number }> => {
   // Cache
   if (!forceFresh && locationCache && (Date.now() - locationCache.timestamp) < CONFIG.CACHE_DURATION) {
     return { location: locationCache.location, accuracy: locationCache.accuracy, converged: true, samples: 1 };
@@ -179,6 +210,13 @@ const collectConvergedLocation = async (forceFresh: boolean): Promise<{ location
       samples.push({ latitude: lat, longitude: lng, accuracy: acc, timestamp: Date.now() });
       progressListener?.({ samples: samples.length, bestAccuracy: Math.min(...samples.map(s => s.accuracy)), converged: false });
 
+      // Já está dentro do raio da obra: não há motivo para continuar a coletar.
+      if (isWithinTarget?.(lat, lng, acc)) {
+        progressListener?.({ samples: samples.length, bestAccuracy: acc, converged: true });
+        finish({ location: { latitude: lat, longitude: lng }, accuracy: acc });
+        return;
+      }
+
       // Checar convergência nas últimas N amostras
       if (samples.length >= CONFIG.CONVERGENCE_SAMPLES) {
         const last = samples.slice(-CONFIG.CONVERGENCE_SAMPLES);
@@ -201,7 +239,7 @@ const collectConvergedLocation = async (forceFresh: boolean): Promise<{ location
     };
 
     // Timeout final da janela
-    windowTimeoutId = setTimeout(() => {
+    windowTimeoutId = setTimeout(async () => {
       if (settled) return;
       if (samples.length >= CONFIG.MIN_SAMPLES_FOR_MEDIAN) {
         const best3 = [...samples].sort((a, b) => a.accuracy - b.accuracy).slice(0, 3);
@@ -213,7 +251,13 @@ const collectConvergedLocation = async (forceFresh: boolean): Promise<{ location
         const best = [...samples].sort((a, b) => a.accuracy - b.accuracy)[0];
         finish({ location: { latitude: best.latitude, longitude: best.longitude }, accuracy: best.accuracy });
       } else {
-        finish(null, new Error('GPS não estabilizou. Vá para um local aberto e tente novamente.'));
+        const fallback = await singleReading();
+        if (settled) return;
+        if (fallback) {
+          finish({ location: { latitude: fallback.latitude, longitude: fallback.longitude }, accuracy: fallback.accuracy });
+        } else {
+          finish(null, new Error('Não foi possível obter o GPS. Verifique se a localização está ativa e tente novamente.'));
+        }
       }
     }, CONFIG.COLLECTION_WINDOW_MS);
 
@@ -338,6 +382,32 @@ class LocationHistoryManager {
   }
 }
 
+interface LocationMatch {
+  location: AllowedLocation;
+  distance: number;
+  adaptiveRange: number;
+  calibrationApplied: boolean;
+}
+
+/** Obra ativa mais próxima cujo raio contém a leitura informada. */
+const findMatchingLocation = (
+  reading: { latitude: number; longitude: number },
+  accuracy: number,
+  allowedLocations: AllowedLocation[]
+): LocationMatch | null => {
+  let best: LocationMatch | null = null;
+  for (const allowed of allowedLocations) {
+    if (!allowed.is_active) continue;
+    const cal = CalibrationManager.applyCalibration({ ...reading, accuracy }, allowed.id);
+    const distance = calculateDistance(cal.latitude, cal.longitude, Number(allowed.latitude), Number(allowed.longitude));
+    const adaptiveRange = calculateAdaptiveRange(Number(allowed.range_meters), cal.accuracy);
+    if (distance <= adaptiveRange && (!best || distance < best.distance)) {
+      best = { location: allowed, distance, adaptiveRange, calibrationApplied: cal.calibrationApplied };
+    }
+  }
+  return best;
+};
+
 export class UnifiedLocationSystem {
   static async validateLocation(
     allowedLocations: AllowedLocation[],
@@ -352,38 +422,20 @@ export class UnifiedLocationSystem {
         return { valid: false, message: 'Sistema sem localizações permitidas configuradas', debug };
       }
 
-      const gpsResult = await collectConvergedLocation(options?.forceFresh ?? false);
+      const gpsResult = await collectConvergedLocation(
+        options?.forceFresh ?? false,
+        (lat, lng, acc) => findMatchingLocation({ latitude: lat, longitude: lng }, acc, allowedLocations) !== null
+      );
       const { location: rawLocation, accuracy, converged, samples } = gpsResult;
       debug.samplesCollected = samples;
       debug.converged = converged;
 
       const gpsQuality = validateGPSQuality(accuracy);
 
-      if (!gpsQuality.acceptable) {
-        return {
-          valid: false,
-          message: gpsQuality.message,
-          location: { ...rawLocation, accuracy, timestamp: Date.now() },
-          gpsAccuracy: accuracy,
-          needsCalibration: true,
-          debug,
-        };
-      }
-
-      let bestMatch: { location: AllowedLocation; distance: number; adaptiveRange: number; calibrationApplied: boolean } | null = null;
-
-      for (const allowed of allowedLocations) {
-        if (!allowed.is_active) continue;
-        const cal = CalibrationManager.applyCalibration({ ...rawLocation, accuracy }, allowed.id);
-        if (cal.calibrationApplied) debug.calibrationUsed = true;
-        const distance = calculateDistance(cal.latitude, cal.longitude, Number(allowed.latitude), Number(allowed.longitude));
-        const adaptiveRange = calculateAdaptiveRange(Number(allowed.range_meters), cal.accuracy);
-        if (distance <= adaptiveRange) {
-          if (!bestMatch || distance < bestMatch.distance) {
-            bestMatch = { location: allowed, distance, adaptiveRange, calibrationApplied: cal.calibrationApplied };
-          }
-        }
-      }
+      // O raio da obra é a regra que decide. A precisão do GPS é metadado gravado
+      // no registro para auditoria, nunca um bloqueio para quem está dentro do raio.
+      const bestMatch = findMatchingLocation(rawLocation, accuracy, allowedLocations);
+      if (bestMatch?.calibrationApplied) debug.calibrationUsed = true;
 
       if (!bestMatch) {
         let closest: AllowedLocation | null = null;
@@ -393,13 +445,18 @@ export class UnifiedLocationSystem {
           const d = calculateDistance(rawLocation.latitude, rawLocation.longitude, Number(allowed.latitude), Number(allowed.longitude));
           if (d < minD) { minD = d; closest = allowed; }
         }
+        const distanceMessage = closest
+          ? `Você está a ${Math.round(minD)}m de ${closest.name}. Aproxime-se para registrar o ponto.`
+          : 'Nenhuma localização permitida próxima';
         return {
           valid: false,
-          message: closest ? `Você está a ${Math.round(minD)}m de ${closest.name}. Aproxime-se para registrar o ponto.` : 'Nenhuma localização permitida próxima',
+          // Fora do raio com sinal ruim: a distância pode ser artefato da imprecisão.
+          message: gpsQuality.acceptable ? distanceMessage : `${distanceMessage} (sinal de GPS fraco: ±${Math.round(accuracy)}m)`,
           location: { ...rawLocation, accuracy, timestamp: Date.now() },
           closestLocation: closest || undefined,
           distance: minD === Infinity ? undefined : minD,
           gpsAccuracy: accuracy,
+          needsCalibration: !gpsQuality.acceptable,
           debug,
         };
       }
@@ -409,7 +466,6 @@ export class UnifiedLocationSystem {
       if (locationChanged) debug.locationChangeDetected = true;
       LocationHistoryManager.saveLastLocation(bestMatch.location.id, rawLocation);
 
-      const isValid = gpsQuality.confidence >= confidenceThreshold * 100 || gpsQuality.confidence >= confidenceThreshold;
       return {
         valid: true,
         message: `Localização autorizada em ${bestMatch.location.name}`,

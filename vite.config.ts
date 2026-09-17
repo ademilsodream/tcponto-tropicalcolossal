@@ -24,11 +24,18 @@ export default defineConfig(({ mode }) => ({
     outDir: 'dist',
     sourcemap: false,
     minify: mode === 'production' ? 'terser' : false,
+    chunkSizeWarningLimit: 700,
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['react', 'react-dom'],
+          vendor: ['react', 'react-dom', 'react-router-dom'],
           ui: ['@radix-ui/react-dialog', '@radix-ui/react-select', '@radix-ui/react-popover'],
+          supabase: ['@supabase/supabase-js'],
+          query: ['@tanstack/react-query'],
+          // Pesados e usados só em telas secundárias — ficam fora do caminho
+          // crítico do registro de ponto.
+          charts: ['recharts'],
+          qr: ['html5-qrcode'],
         },
       },
     },
