@@ -113,6 +113,9 @@ const UnifiedTimeRegistration: React.FC = () => {
 
   const isRemote = profile?.use_location_tracking === false;
 
+  // Mapa menor no telemóvel: menos imagens carregadas, menos memória.
+  const mapHeight = typeof window !== 'undefined' && window.innerWidth < 640 ? 260 : 420;
+
   const online = useOnlineStatus();
   const { pendingCount, syncing, syncNow, refreshCount } = useOfflineSync();
 
