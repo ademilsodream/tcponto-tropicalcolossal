@@ -262,6 +262,38 @@ const UnifiedTimeRegistration: React.FC = () => {
 
   useEffect(() => { fetchLastRegistration(); }, [fetchLastRegistration]);
 
+  // Resolve o endereço da rua depois da gravação e atualiza apenas esse texto.
+  const resolveAddressInBackground = useCallback(async (
+    date: string,
+    action: string,
+    lat: number,
+    lon: number
+  ) => {
+    if (!profile?.id) return;
+    try {
+      const geo = await withTimeout(reverseGeocode(lat, lon), 5000);
+      const address = geo?.address;
+      if (!address) return;
+
+      const { data } = await supabase
+        .from('time_records')
+        .select('id, locations')
+        .eq('user_id', profile.id)
+        .eq('date', date)
+        .in('status', ['active', 'approved'])
+        .maybeSingle();
+      if (!data?.id) return;
+
+      const locations = { ...((data.locations as Record<string, any>) || {}) };
+      if (!locations[action]) return;
+      locations[action] = { ...locations[action], address };
+
+      await supabase.from('time_records').update({ locations }).eq('id', data.id);
+    } catch {
+      // O endereço é apenas informativo — falhar aqui não afeta o ponto.
+    }
+  }, [profile?.id]);
+
   const handleTimeRegistration = async () => {
     if (registrationLockRef.current) return;
     if (!profile) {
