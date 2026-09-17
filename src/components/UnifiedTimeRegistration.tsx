@@ -14,7 +14,7 @@ import { AllowedLocation } from '@/types/index';
 import { reverseGeocode } from '@/utils/geocoding';
 import { calculateAdjustedTime } from '@/utils/calculateAdjustedTime';
 import { TimeRegistrationProgress } from './TimeRegistrationProgress';
-import LocationMap from './LocationMap';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AnnouncementNotification } from './AnnouncementNotification';
 import { useWorkShiftValidation } from '@/hooks/useWorkShiftValidation';
@@ -112,9 +112,6 @@ const UnifiedTimeRegistration: React.FC = () => {
   const shiftValidation = useWorkShiftValidation();
 
   const isRemote = profile?.use_location_tracking === false;
-
-  // Mapa menor no telemóvel: menos imagens carregadas, menos memória.
-  const mapHeight = typeof window !== 'undefined' && window.innerWidth < 640 ? 260 : 420;
 
   const online = useOnlineStatus();
   const { pendingCount, syncing, syncNow, refreshCount } = useOfflineSync();
