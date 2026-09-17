@@ -118,16 +118,9 @@ export const UnifiedGPSStatus: React.FC<UnifiedGPSStatusProps> = ({
           </Button>
         </div>
       )}
-
-      {/* Debug Info (só em desenvolvimento) */}
-      {debug && process.env.NODE_ENV === 'development' && (
-        <details className="text-xs">
-          <summary className="cursor-pointer text-gray-500">Debug Info</summary>
-          <pre className="mt-2 p-2 bg-gray-100 rounded overflow-auto">
-            {JSON.stringify(debug, null, 2)}
-          </pre>
-        </details>
-      )}
+    </div>
+  );
+};
     </div>
   );
 };
