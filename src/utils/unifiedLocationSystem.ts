@@ -143,17 +143,22 @@ const collectConvergedLocation = async (forceFresh: boolean): Promise<{ location
     let watchId: number | null = null;
     let capacitorWatchId: string | null = null;
     let settled = false;
+    let windowTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
     const finish = (result: { location: { latitude: number; longitude: number }; accuracy: number } | null, error?: Error) => {
       if (settled) return;
       settled = true;
+      if (windowTimeoutId) { clearTimeout(windowTimeoutId); windowTimeoutId = null; }
       if (watchId !== null && navigator.geolocation) {
         try { navigator.geolocation.clearWatch(watchId); } catch {}
+        watchId = null;
       }
       if (capacitorWatchId && (window as any)?.Capacitor?.Plugins?.Geolocation) {
         try { (window as any).Capacitor.Plugins.Geolocation.clearWatch({ id: capacitorWatchId }); } catch {}
+        capacitorWatchId = null;
       }
       pendingLocationRequest = null;
+      cancelActiveCollection = null;
       if (error || !result) {
         reject(error || new Error('Falha ao obter localização'));
       } else {
@@ -161,6 +166,8 @@ const collectConvergedLocation = async (forceFresh: boolean): Promise<{ location
         resolve(result);
       }
     };
+
+    cancelActiveCollection = () => finish(null, new Error('Coleta de GPS cancelada'));
 
     const handleSample = (lat: number, lng: number, acc: number) => {
       if (settled) return;
