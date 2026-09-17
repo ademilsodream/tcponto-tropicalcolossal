@@ -121,8 +121,5 @@ export const UnifiedGPSStatus: React.FC<UnifiedGPSStatusProps> = ({
     </div>
   );
 };
-    </div>
-  );
-};
 
 export default UnifiedGPSStatus;
