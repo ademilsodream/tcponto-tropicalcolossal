@@ -201,7 +201,7 @@ const collectConvergedLocation = async (forceFresh: boolean): Promise<{ location
     };
 
     // Timeout final da janela
-    const windowTimeout = setTimeout(() => {
+    windowTimeoutId = setTimeout(() => {
       if (settled) return;
       if (samples.length >= CONFIG.MIN_SAMPLES_FOR_MEDIAN) {
         const best3 = [...samples].sort((a, b) => a.accuracy - b.accuracy).slice(0, 3);
