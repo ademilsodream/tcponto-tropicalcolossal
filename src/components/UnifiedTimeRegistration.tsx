@@ -14,7 +14,7 @@ import { AllowedLocation } from '@/types/index';
 import { reverseGeocode } from '@/utils/geocoding';
 import { calculateAdjustedTime } from '@/utils/calculateAdjustedTime';
 import { TimeRegistrationProgress } from './TimeRegistrationProgress';
-import LocationMap from './LocationMap';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AnnouncementNotification } from './AnnouncementNotification';
 import { useWorkShiftValidation } from '@/hooks/useWorkShiftValidation';
@@ -112,9 +112,6 @@ const UnifiedTimeRegistration: React.FC = () => {
   const shiftValidation = useWorkShiftValidation();
 
   const isRemote = profile?.use_location_tracking === false;
-
-  // Mapa menor no telemóvel: menos imagens carregadas, menos memória.
-  const mapHeight = typeof window !== 'undefined' && window.innerWidth < 640 ? 260 : 420;
 
   const online = useOnlineStatus();
   const { pendingCount, syncing, syncNow, refreshCount } = useOfflineSync();
@@ -555,70 +552,71 @@ const UnifiedTimeRegistration: React.FC = () => {
       <div className="p-4 space-y-4">
         {/* Anúncios */}
         {user && <AnnouncementNotification userId={user.id} />}
-        
-        {/* Primeiro Card - Botões, Funcionário, Data/Hora, Mapa */}
-        <div className="w-full bg-white/90 rounded-xl shadow-sm">
-          <div className="px-4 py-4">
-            {/* Botões no topo */}
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              <Button 
-                onClick={handleTimeRegistration} 
-                disabled={buttonDisabled} 
-                size="lg" 
-                className="h-16 text-lg font-semibold"
-              >
-                {registrationPhase === 'gps' ? 'Confirmando GPS…' : registrationPhase === 'saving' ? 'Gravando…' : 'Registrar'}
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={calibrateForCurrentLocation} 
-                className="h-16 text-lg"
-              >
-                Calibrar GPS
-              </Button>
-            </div>
-            
-            {/* Nome do funcionário */}
-            <div className="mb-3">
-              <div className="uppercase text-xs text-gray-500 font-medium">Funcionário</div>
-              <div className="text-base font-semibold text-gray-900">{profile?.name || user?.email}</div>
-            </div>
-            
-            {/* Data e hora */}
-            <LiveClock />
-            
-            {/* Cooldown */}
-            {remainingCooldown !== null && (
-              <div className="mb-4 text-center text-sm text-gray-600">
-                Aguarde {formatRemaining(remainingCooldown)} para novo registro
-              </div>
-            )}
-            
-            {/* Status GPS */}
-            <MemoGPSStatus
-              loading={loading || loadingLocations}
-              error={error}
-              location={location}
-              gpsQuality={gpsQuality}
-              validationResult={validationResult}
-              canRegister={isRemote ? true : canRegister}
-              calibration={calibration}
-              validateLocation={validateLocation}
-              calibrateForCurrentLocation={calibrateForCurrentLocation}
-              refreshLocation={refreshLocation}
-              clearCalibration={clearCalibration}
-              debug={debug}
-              hideDetails={true}
-              showCalibrate={false}
-              showStatus={false}
-            />
+
+        {/* Cartão principal - funcionário, relógio, ação */}
+        <div className="w-full bg-white/90 rounded-xl shadow-sm px-4 py-4">
+          <div className="mb-3">
+            <div className="uppercase text-xs text-gray-500 font-medium">Funcionário</div>
+            <div className="text-base font-semibold text-gray-900">{profile?.name || user?.email}</div>
           </div>
-          
-          {/* Mapa */}
-          <LocationMap latitude={location?.latitude ?? 0} longitude={location?.longitude ?? 0} height={mapHeight} />
+
+          {/* Data e hora */}
+          <LiveClock />
+
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <Button
+              onClick={handleTimeRegistration}
+              disabled={buttonDisabled}
+              size="lg"
+              className="h-16 text-lg font-semibold"
+            >
+              {registrationPhase === 'gps' ? 'Confirmando GPS…' : registrationPhase === 'saving' ? 'Gravando…' : 'Registrar'}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={calibrateForCurrentLocation}
+              className="h-16 text-lg"
+            >
+              Calibrar GPS
+            </Button>
+          </div>
+
+          {/* Cooldown */}
+          {remainingCooldown !== null && (
+            <div className="mb-4 text-center text-sm text-gray-600">
+              Aguarde {formatRemaining(remainingCooldown)} para novo registro
+            </div>
+          )}
+
+          {/* Status GPS */}
+          <MemoGPSStatus
+            loading={loading || loadingLocations}
+            error={error}
+            location={location}
+            gpsQuality={gpsQuality}
+            validationResult={validationResult}
+            canRegister={isRemote ? true : canRegister}
+            calibration={calibration}
+            validateLocation={validateLocation}
+            calibrateForCurrentLocation={calibrateForCurrentLocation}
+            refreshLocation={refreshLocation}
+            clearCalibration={clearCalibration}
+            debug={debug}
+            hideDetails={true}
+            showCalibrate={false}
+            showStatus={false}
+          />
+
+          {!isRemote && location && (
+            <div className="mt-3 text-xs text-gray-500">
+              {validationResult?.closestLocation?.name
+                ? `${validationResult.closestLocation.name} · ${Math.round(validationResult?.distance ?? 0)} m`
+                : `${location.latitude.toFixed(5)}, ${location.longitude.toFixed(5)}`}
+            </div>
+          )}
         </div>
- 
-        {/* Segundo Card - Linha dos registros */}
+
+        {/* Timeline dos registos em blocos */}
         <div className="w-full bg-white/90 rounded-xl shadow-sm p-4">
           <MemoProgress timeRecord={lastRegistration as any} />
         </div>
