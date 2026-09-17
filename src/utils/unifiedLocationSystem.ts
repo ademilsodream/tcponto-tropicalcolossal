@@ -90,6 +90,8 @@ let locationCache: {
 } | null = null;
 
 let pendingLocationRequest: Promise<{ location: { latitude: number; longitude: number }; accuracy: number }> | null = null;
+// Permite encerrar imediatamente a coleta em curso (ex.: ao sair da tela).
+let cancelActiveCollection: (() => void) | null = null;
 
 type SampleListener = (info: { samples: number; bestAccuracy: number | null; converged: boolean }) => void;
 let progressListener: SampleListener | null = null;
