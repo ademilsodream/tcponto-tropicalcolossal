@@ -305,9 +305,12 @@ export const useUnifiedLocation = (
     setDebug(stats);
   }, []);
 
-  // Inicializar localização e validação
+  // Inicializar localização uma única vez e revalidar ao voltar do plano de fundo.
+  const initializedRef = useRef(false);
   useEffect(() => {
-    const initializeLocation = async () => {
+    if (allowedLocations.length === 0) return;
+
+    const run = async () => {
       try {
         await validateLocation();
         updateDebugStats();
@@ -316,16 +319,24 @@ export const useUnifiedLocation = (
       }
     };
 
-    if (allowedLocations.length > 0) {
-      initializeLocation();
+    if (!initializedRef.current) {
+      initializedRef.current = true;
+      run();
     }
+
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') run();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
   }, [allowedLocations, validateLocation, updateDebugStats]);
 
-  // Atualizar estatísticas periodicamente
+  // Encerrar coletas pendentes ao desmontar (evita GPS ligado sem tela).
   useEffect(() => {
-    const interval = setInterval(updateDebugStats, 10000); // A cada 10 segundos
-    return () => clearInterval(interval);
-  }, [updateDebugStats]);
+    return () => {
+      UnifiedLocationSystem.clearCache();
+    };
+  }, []);
 
   return {
     location,
