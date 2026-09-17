@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { LogIn, Coffee, LogOut } from 'lucide-react';
+import { LogIn, Coffee, LogOut, Check } from 'lucide-react';
 
 export type TimeRecordKey = 'clock_in' | 'lunch_start' | 'lunch_end' | 'clock_out';
 
@@ -32,50 +32,72 @@ interface TimeRegistrationProgressProps {
 }
 
 const steps = [
-  { key: 'clock_in' as TimeRecordKey, label: 'Entrada', icon: LogIn, color: 'bg-green-500' },
-  { key: 'lunch_start' as TimeRecordKey, label: 'Início Almoço', icon: Coffee, color: 'bg-orange-500' },
-  { key: 'lunch_end' as TimeRecordKey, label: 'Volta Almoço', icon: Coffee, color: 'bg-orange-500' },
-  { key: 'clock_out' as TimeRecordKey, label: 'Saída', icon: LogOut, color: 'bg-red-500' },
+  { key: 'clock_in' as TimeRecordKey, label: 'Entrada', icon: LogIn },
+  { key: 'lunch_start' as TimeRecordKey, label: 'Início Almoço', icon: Coffee },
+  { key: 'lunch_end' as TimeRecordKey, label: 'Volta Almoço', icon: Coffee },
+  { key: 'clock_out' as TimeRecordKey, label: 'Saída', icon: LogOut },
 ];
 
 export const TimeRegistrationProgress: React.FC<TimeRegistrationProgressProps> = ({ timeRecord }) => {
   const getValue = (key: TimeRecordKey) => timeRecord?.[key];
-  const completedCount = steps.filter(step => getValue(step.key)).length;
+  const completedCount = steps.filter((step) => getValue(step.key)).length;
 
   return (
-    <div className="mb-6">
-      <div className="flex justify-between items-center mb-3">
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          Registos de hoje
+        </h2>
+        <span className="text-xs font-medium text-muted-foreground">{completedCount} de 4</span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
         {steps.map((step, index) => {
           const Icon = step.icon;
-          const isCompleted = !!getValue(step.key);
+          const value = getValue(step.key);
+          const isCompleted = !!value;
           const isNext = !isCompleted && completedCount === index;
 
           return (
-            <div key={step.key} className="flex flex-col items-center flex-1">
+            <div
+              key={step.key}
+              className={`rounded-xl border p-3 transition-colors ${
+                isCompleted
+                  ? 'border-primary/30 bg-primary/5'
+                  : isNext
+                    ? 'border-primary border-dashed bg-background'
+                    : 'border-border bg-muted/40'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div
+                  className={`w-9 h-9 rounded-lg flex items-center justify-center ${
+                    isCompleted
+                      ? 'bg-primary text-primary-foreground'
+                      : isNext
+                        ? 'bg-primary/10 text-primary'
+                        : 'bg-muted text-muted-foreground'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                </div>
+                {isCompleted && <Check className="w-4 h-4 text-primary" />}
+                {isNext && (
+                  <span className="text-[10px] font-semibold uppercase text-primary">Próximo</span>
+                )}
+              </div>
+
+              <div className="mt-2 text-xs font-medium text-muted-foreground">{step.label}</div>
               <div
-                className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center mb-1 transition-all ${
-                  isCompleted ? `${step.color} text-white` : isNext ? 'bg-blue-100 border-2 border-blue-600 text-blue-600' : 'bg-gray-100 text-gray-400'
+                className={`text-xl font-bold tabular-nums ${
+                  isCompleted ? 'text-foreground' : 'text-muted-foreground/50'
                 }`}
               >
-                <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                {isCompleted ? String(value).slice(0, 5) : '--:--'}
               </div>
-              <span className={`text-xs text-center ${isCompleted ? 'text-gray-900 font-medium' : 'text-gray-500'}`}>{step.label}</span>
-              {isCompleted && (
-                <span className="text-xs text-blue-600 mt-1 font-medium">{getValue(step.key)}</span>
-              )}
             </div>
           );
         })}
-      </div>
-
-      <div className="w-full bg-gray-200 rounded-full h-2">
-        <div
-          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-          style={{
-            width: `${(completedCount / 4) * 100}%`,
-            background: completedCount > 0 ? 'linear-gradient(to right, #22c55e, #f97316, #f97316, #ef4444)' : '#3b82f6',
-          }}
-        />
       </div>
     </div>
   );
