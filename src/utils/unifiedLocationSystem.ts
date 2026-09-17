@@ -90,6 +90,8 @@ let locationCache: {
 } | null = null;
 
 let pendingLocationRequest: Promise<{ location: { latitude: number; longitude: number }; accuracy: number }> | null = null;
+// Permite encerrar imediatamente a coleta em curso (ex.: ao sair da tela).
+let cancelActiveCollection: (() => void) | null = null;
 
 type SampleListener = (info: { samples: number; bestAccuracy: number | null; converged: boolean }) => void;
 let progressListener: SampleListener | null = null;
@@ -141,17 +143,22 @@ const collectConvergedLocation = async (forceFresh: boolean): Promise<{ location
     let watchId: number | null = null;
     let capacitorWatchId: string | null = null;
     let settled = false;
+    let windowTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
     const finish = (result: { location: { latitude: number; longitude: number }; accuracy: number } | null, error?: Error) => {
       if (settled) return;
       settled = true;
+      if (windowTimeoutId) { clearTimeout(windowTimeoutId); windowTimeoutId = null; }
       if (watchId !== null && navigator.geolocation) {
         try { navigator.geolocation.clearWatch(watchId); } catch {}
+        watchId = null;
       }
       if (capacitorWatchId && (window as any)?.Capacitor?.Plugins?.Geolocation) {
         try { (window as any).Capacitor.Plugins.Geolocation.clearWatch({ id: capacitorWatchId }); } catch {}
+        capacitorWatchId = null;
       }
       pendingLocationRequest = null;
+      cancelActiveCollection = null;
       if (error || !result) {
         reject(error || new Error('Falha ao obter localização'));
       } else {
@@ -159,6 +166,8 @@ const collectConvergedLocation = async (forceFresh: boolean): Promise<{ location
         resolve(result);
       }
     };
+
+    cancelActiveCollection = () => finish(null, new Error('Coleta de GPS cancelada'));
 
     const handleSample = (lat: number, lng: number, acc: number) => {
       if (settled) return;
@@ -192,7 +201,7 @@ const collectConvergedLocation = async (forceFresh: boolean): Promise<{ location
     };
 
     // Timeout final da janela
-    const windowTimeout = setTimeout(() => {
+    windowTimeoutId = setTimeout(() => {
       if (settled) return;
       if (samples.length >= CONFIG.MIN_SAMPLES_FOR_MEDIAN) {
         const best3 = [...samples].sort((a, b) => a.accuracy - b.accuracy).slice(0, 3);
@@ -228,7 +237,7 @@ const collectConvergedLocation = async (forceFresh: boolean): Promise<{ location
 
     // Navigator
     if (!navigator.geolocation) {
-      clearTimeout(windowTimeout);
+      
       finish(null, new Error('Geolocalização não suportada neste dispositivo'));
       return;
     }
@@ -457,7 +466,14 @@ export class UnifiedLocationSystem {
     }
   }
 
-  static clearCache(): void { locationCache = null; pendingLocationRequest = null; }
+  static clearCache(): void {
+    locationCache = null;
+    if (cancelActiveCollection) {
+      try { cancelActiveCollection(); } catch {}
+    }
+    pendingLocationRequest = null;
+    cancelActiveCollection = null;
+  }
 
   static getSystemStats() {
     const environment = (isNativeApp() ? 'APK' : 'WEB') as 'APK' | 'WEB';

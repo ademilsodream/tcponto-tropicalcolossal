@@ -79,6 +79,25 @@ const getNextActionFromRecord = (rec: any | null): 'clock_in' | 'lunch_start' | 
   return null;
 };
 
+// Relógio isolado: só ele é redesenhado a cada segundo.
+const LiveClock: React.FC = React.memo(() => {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <div className="mb-4">
+      <div className="text-base text-gray-600">{format(now, "EEE, dd MMM yyyy", { locale: ptBR })}</div>
+      <div className="text-3xl font-bold tracking-wide mt-1">{format(now, 'HH:mm:ss')}</div>
+    </div>
+  );
+});
+LiveClock.displayName = 'LiveClock';
+
+const MemoGPSStatus = React.memo(UnifiedGPSStatus);
+const MemoProgress = React.memo(TimeRegistrationProgress);
+
 const UnifiedTimeRegistration: React.FC = () => {
   const [isRegistering, setIsRegistering] = useState(false);
   const [registrationPhase, setRegistrationPhase] = useState<'idle' | 'gps' | 'saving'>('idle');
@@ -93,6 +112,9 @@ const UnifiedTimeRegistration: React.FC = () => {
   const shiftValidation = useWorkShiftValidation();
 
   const isRemote = profile?.use_location_tracking === false;
+
+  // Mapa menor no telemóvel: menos imagens carregadas, menos memória.
+  const mapHeight = typeof window !== 'undefined' && window.innerWidth < 640 ? 260 : 420;
 
   const online = useOnlineStatus();
   const { pendingCount, syncing, syncNow, refreshCount } = useOfflineSync();
@@ -158,20 +180,23 @@ const UnifiedTimeRegistration: React.FC = () => {
     loadAllowed();
   }, [toast, profile?.id, online]);
 
-  // Cooldown
+  // Restaurar cooldown salvo (uma vez).
   useEffect(() => {
     const stored = localStorage.getItem('timeRegistrationCooldown');
-    if (stored) {
-      const end = Number(stored);
-      if (!Number.isNaN(end) && end > Date.now()) {
-        setCooldownEndTime(end);
-        setRemainingCooldown(end - Date.now());
-      } else {
-        localStorage.removeItem('timeRegistrationCooldown');
-      }
+    if (!stored) return;
+    const end = Number(stored);
+    if (!Number.isNaN(end) && end > Date.now()) {
+      setCooldownEndTime(end);
+      setRemainingCooldown(end - Date.now());
+    } else {
+      localStorage.removeItem('timeRegistrationCooldown');
     }
-    const interval = setInterval(() => {
-      if (cooldownEndTime === null) return;
+  }, []);
+
+  // Contagem só roda quando existe cooldown ativo.
+  useEffect(() => {
+    if (cooldownEndTime === null) return;
+    const tick = () => {
       const left = cooldownEndTime - Date.now();
       if (left <= 0) {
         setCooldownEndTime(null);
@@ -180,7 +205,9 @@ const UnifiedTimeRegistration: React.FC = () => {
       } else {
         setRemainingCooldown(left);
       }
-    }, 1000);
+    };
+    tick();
+    const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
   }, [cooldownEndTime]);
 
@@ -234,6 +261,38 @@ const UnifiedTimeRegistration: React.FC = () => {
   }, [profile?.id]);
 
   useEffect(() => { fetchLastRegistration(); }, [fetchLastRegistration]);
+
+  // Resolve o endereço da rua depois da gravação e atualiza apenas esse texto.
+  const resolveAddressInBackground = useCallback(async (
+    date: string,
+    action: string,
+    lat: number,
+    lon: number
+  ) => {
+    if (!profile?.id) return;
+    try {
+      const geo = await withTimeout(reverseGeocode(lat, lon), 5000);
+      const address = geo?.address;
+      if (!address) return;
+
+      const { data } = await supabase
+        .from('time_records')
+        .select('id, locations')
+        .eq('user_id', profile.id)
+        .eq('date', date)
+        .in('status', ['active', 'approved'])
+        .maybeSingle();
+      if (!data?.id) return;
+
+      const locations = { ...((data.locations as Record<string, any>) || {}) };
+      if (!locations[action]) return;
+      locations[action] = { ...locations[action], address };
+
+      await supabase.from('time_records').update({ locations }).eq('id', data.id);
+    } catch {
+      // O endereço é apenas informativo — falhar aqui não afeta o ponto.
+    }
+  }, [profile?.id]);
 
   const handleTimeRegistration = async () => {
     if (registrationLockRef.current) return;
@@ -306,19 +365,23 @@ const UnifiedTimeRegistration: React.FC = () => {
 
       setRegistrationPhase('saving');
 
-      // Montar entrada locations[action]
+      // Montar entrada locations[action] — o endereço da rua é resolvido DEPOIS
+      // da gravação, para não atrasar a batida.
       let entry: any = {};
       if (isRemote) {
-        let address = 'Remoto';
-        try { if (lat && lon) { const geo = await reverseGeocode(lat, lon); address = geo.address || 'Remoto'; } } catch {}
-        entry = { address, distance: 10, latitude: lat || null, longitude: lon || null, timestamp: ts.toISOString(), locationName: 'Remoto' };
+        entry = {
+          address: 'Remoto',
+          distance: 10,
+          latitude: lat || null,
+          longitude: lon || null,
+          timestamp: ts.toISOString(),
+          locationName: 'Remoto',
+        };
       } else {
         if (!lat || !lon) { toast({ title: 'Erro', description: 'Localização não disponível. Tente novamente.', variant: 'destructive' }); return; }
-        let addr = `Coordenadas: ${lat.toFixed(6)}, ${lon.toFixed(6)}`;
-        try { addr = (await reverseGeocode(lat, lon)).address || addr; } catch {}
         const dist = Math.round(freshValidation?.distance ?? 0);
         entry = {
-          address: addr,
+          address: `Coordenadas: ${lat.toFixed(6)}, ${lon.toFixed(6)}`,
           distance: Number.isFinite(dist) ? dist : 0,
           latitude: lat,
           longitude: lon,
@@ -422,8 +485,10 @@ const UnifiedTimeRegistration: React.FC = () => {
 
           preserved = true;
           logRegistrationAttempt({ stage: 'saved', action, gpsAccuracy: freshValidation?.gpsAccuracy, distance: freshValidation?.distance, locationName: freshValidation?.closestLocation?.name });
-          await fetchLastRegistration();
           toast({ title: 'Ponto registrado', description: `${labelMap[action]} foi enviada com sucesso.` });
+          // Completar o endereço da rua em segundo plano, sem travar a tela.
+          if (lat && lon) void resolveAddressInBackground(today, action, lat, lon);
+          await fetchLastRegistration();
         } catch (saveError) {
           if (!isRecoverableNetworkError(saveError)) throw saveError;
           await queueLocally();
@@ -520,10 +585,7 @@ const UnifiedTimeRegistration: React.FC = () => {
             </div>
             
             {/* Data e hora */}
-            <div className="mb-4">
-              <div className="text-base text-gray-600">{format(new Date(), "EEE, dd MMM yyyy", { locale: ptBR })}</div>
-              <div className="text-3xl font-bold tracking-wide mt-1">{format(new Date(), 'HH:mm:ss')}</div>
-            </div>
+            <LiveClock />
             
             {/* Cooldown */}
             {remainingCooldown !== null && (
@@ -533,7 +595,7 @@ const UnifiedTimeRegistration: React.FC = () => {
             )}
             
             {/* Status GPS */}
-            <UnifiedGPSStatus
+            <MemoGPSStatus
               loading={loading || loadingLocations}
               error={error}
               location={location}
@@ -553,12 +615,12 @@ const UnifiedTimeRegistration: React.FC = () => {
           </div>
           
           {/* Mapa */}
-          <LocationMap latitude={location?.latitude ?? 0} longitude={location?.longitude ?? 0} height={420} />
+          <LocationMap latitude={location?.latitude ?? 0} longitude={location?.longitude ?? 0} height={mapHeight} />
         </div>
  
         {/* Segundo Card - Linha dos registros */}
         <div className="w-full bg-white/90 rounded-xl shadow-sm p-4">
-          <TimeRegistrationProgress timeRecord={lastRegistration as any} />
+          <MemoProgress timeRecord={lastRegistration as any} />
         </div>
       </div>
     </div>
