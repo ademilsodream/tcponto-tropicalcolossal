@@ -466,7 +466,14 @@ export class UnifiedLocationSystem {
     }
   }
 
-  static clearCache(): void { locationCache = null; pendingLocationRequest = null; }
+  static clearCache(): void {
+    locationCache = null;
+    if (cancelActiveCollection) {
+      try { cancelActiveCollection(); } catch {}
+    }
+    pendingLocationRequest = null;
+    cancelActiveCollection = null;
+  }
 
   static getSystemStats() {
     const environment = (isNativeApp() ? 'APK' : 'WEB') as 'APK' | 'WEB';
