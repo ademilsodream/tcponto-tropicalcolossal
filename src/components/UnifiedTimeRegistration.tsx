@@ -79,6 +79,25 @@ const getNextActionFromRecord = (rec: any | null): 'clock_in' | 'lunch_start' | 
   return null;
 };
 
+// Relógio isolado: só ele é redesenhado a cada segundo.
+const LiveClock: React.FC = React.memo(() => {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <div className="mb-4">
+      <div className="text-base text-gray-600">{format(now, "EEE, dd MMM yyyy", { locale: ptBR })}</div>
+      <div className="text-3xl font-bold tracking-wide mt-1">{format(now, 'HH:mm:ss')}</div>
+    </div>
+  );
+});
+LiveClock.displayName = 'LiveClock';
+
+const MemoGPSStatus = React.memo(UnifiedGPSStatus);
+const MemoProgress = React.memo(TimeRegistrationProgress);
+
 const UnifiedTimeRegistration: React.FC = () => {
   const [isRegistering, setIsRegistering] = useState(false);
   const [registrationPhase, setRegistrationPhase] = useState<'idle' | 'gps' | 'saving'>('idle');
