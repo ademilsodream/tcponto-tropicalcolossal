@@ -237,7 +237,7 @@ const collectConvergedLocation = async (forceFresh: boolean): Promise<{ location
 
     // Navigator
     if (!navigator.geolocation) {
-      clearTimeout(windowTimeout);
+      
       finish(null, new Error('Geolocalização não suportada neste dispositivo'));
       return;
     }
