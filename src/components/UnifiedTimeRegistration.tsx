@@ -333,19 +333,23 @@ const UnifiedTimeRegistration: React.FC = () => {
 
       setRegistrationPhase('saving');
 
-      // Montar entrada locations[action]
+      // Montar entrada locations[action] — o endereço da rua é resolvido DEPOIS
+      // da gravação, para não atrasar a batida.
       let entry: any = {};
       if (isRemote) {
-        let address = 'Remoto';
-        try { if (lat && lon) { const geo = await reverseGeocode(lat, lon); address = geo.address || 'Remoto'; } } catch {}
-        entry = { address, distance: 10, latitude: lat || null, longitude: lon || null, timestamp: ts.toISOString(), locationName: 'Remoto' };
+        entry = {
+          address: 'Remoto',
+          distance: 10,
+          latitude: lat || null,
+          longitude: lon || null,
+          timestamp: ts.toISOString(),
+          locationName: 'Remoto',
+        };
       } else {
         if (!lat || !lon) { toast({ title: 'Erro', description: 'Localização não disponível. Tente novamente.', variant: 'destructive' }); return; }
-        let addr = `Coordenadas: ${lat.toFixed(6)}, ${lon.toFixed(6)}`;
-        try { addr = (await reverseGeocode(lat, lon)).address || addr; } catch {}
         const dist = Math.round(freshValidation?.distance ?? 0);
         entry = {
-          address: addr,
+          address: `Coordenadas: ${lat.toFixed(6)}, ${lon.toFixed(6)}`,
           distance: Number.isFinite(dist) ? dist : 0,
           latitude: lat,
           longitude: lon,
