@@ -453,8 +453,10 @@ const UnifiedTimeRegistration: React.FC = () => {
 
           preserved = true;
           logRegistrationAttempt({ stage: 'saved', action, gpsAccuracy: freshValidation?.gpsAccuracy, distance: freshValidation?.distance, locationName: freshValidation?.closestLocation?.name });
-          await fetchLastRegistration();
           toast({ title: 'Ponto registrado', description: `${labelMap[action]} foi enviada com sucesso.` });
+          // Completar o endereço da rua em segundo plano, sem travar a tela.
+          if (lat && lon) void resolveAddressInBackground(today, action, lat, lon);
+          await fetchLastRegistration();
         } catch (saveError) {
           if (!isRecoverableNetworkError(saveError)) throw saveError;
           await queueLocally();
