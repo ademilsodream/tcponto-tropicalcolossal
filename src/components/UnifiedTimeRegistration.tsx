@@ -177,20 +177,23 @@ const UnifiedTimeRegistration: React.FC = () => {
     loadAllowed();
   }, [toast, profile?.id, online]);
 
-  // Cooldown
+  // Restaurar cooldown salvo (uma vez).
   useEffect(() => {
     const stored = localStorage.getItem('timeRegistrationCooldown');
-    if (stored) {
-      const end = Number(stored);
-      if (!Number.isNaN(end) && end > Date.now()) {
-        setCooldownEndTime(end);
-        setRemainingCooldown(end - Date.now());
-      } else {
-        localStorage.removeItem('timeRegistrationCooldown');
-      }
+    if (!stored) return;
+    const end = Number(stored);
+    if (!Number.isNaN(end) && end > Date.now()) {
+      setCooldownEndTime(end);
+      setRemainingCooldown(end - Date.now());
+    } else {
+      localStorage.removeItem('timeRegistrationCooldown');
     }
-    const interval = setInterval(() => {
-      if (cooldownEndTime === null) return;
+  }, []);
+
+  // Contagem só roda quando existe cooldown ativo.
+  useEffect(() => {
+    if (cooldownEndTime === null) return;
+    const tick = () => {
       const left = cooldownEndTime - Date.now();
       if (left <= 0) {
         setCooldownEndTime(null);
@@ -199,7 +202,9 @@ const UnifiedTimeRegistration: React.FC = () => {
       } else {
         setRemainingCooldown(left);
       }
-    }, 1000);
+    };
+    tick();
+    const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
   }, [cooldownEndTime]);
 
