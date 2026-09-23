@@ -6905,6 +6905,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_active_employee: { Args: never; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
       is_admin_user: { Args: never; Returns: boolean }
       is_month_closed: { Args: { check_date: string }; Returns: boolean }
