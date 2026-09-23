@@ -747,6 +747,157 @@ export type Database = {
         }
         Relationships: []
       }
+      company_establishments: {
+        Row: {
+          address: string | null
+          city: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          is_headquarters: boolean
+          name: string
+          postal_code: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_headquarters?: boolean
+          name: string
+          postal_code?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_headquarters?: boolean
+          name?: string
+          postal_code?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      contractual_salary_history: {
+        Row: {
+          change_reason: string | null
+          created_at: string
+          created_by: string | null
+          effective_date: string
+          employee_id: string
+          id: string
+          monthly_salary: number
+        }
+        Insert: {
+          change_reason?: string | null
+          created_at?: string
+          created_by?: string | null
+          effective_date?: string
+          employee_id: string
+          id?: string
+          monthly_salary: number
+        }
+        Update: {
+          change_reason?: string | null
+          created_at?: string
+          created_by?: string | null
+          effective_date?: string
+          employee_id?: string
+          id?: string
+          monthly_salary?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contractual_salary_history_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractual_salary_history_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_in_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "contractual_salary_history_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_out_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "contractual_salary_history_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_end_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "contractual_salary_history_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_start_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "contractual_salary_history_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_pontos_faltantes_semana"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "contractual_salary_history_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractual_salary_history_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_in_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "contractual_salary_history_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_out_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "contractual_salary_history_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_end_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "contractual_salary_history_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_start_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "contractual_salary_history_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_pontos_faltantes_semana"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       departments: {
         Row: {
           created_at: string
@@ -1118,6 +1269,121 @@ export type Database = {
           },
         ]
       }
+      employee_absences: {
+        Row: {
+          absence_date: string
+          absence_type: string
+          created_at: string
+          created_by: string | null
+          employee_id: string
+          id: string
+          notes: string | null
+        }
+        Insert: {
+          absence_date: string
+          absence_type: string
+          created_at?: string
+          created_by?: string | null
+          employee_id: string
+          id?: string
+          notes?: string | null
+        }
+        Update: {
+          absence_date?: string
+          absence_type?: string
+          created_at?: string
+          created_by?: string | null
+          employee_id?: string
+          id?: string
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_absences_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_absences_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_in_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_absences_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_out_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_absences_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_end_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_absences_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_start_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_absences_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_pontos_faltantes_semana"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_absences_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_absences_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_in_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_absences_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_out_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_absences_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_end_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_absences_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_start_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_absences_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_pontos_faltantes_semana"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       employee_analytics: {
         Row: {
           anomaly_flags: Json | null
@@ -1295,6 +1561,124 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      employee_contract_history: {
+        Row: {
+          change_reason: string | null
+          contract_type: string
+          created_at: string
+          created_by: string | null
+          effective_date: string
+          employee_id: string
+          id: string
+          work_regime: string | null
+        }
+        Insert: {
+          change_reason?: string | null
+          contract_type: string
+          created_at?: string
+          created_by?: string | null
+          effective_date?: string
+          employee_id: string
+          id?: string
+          work_regime?: string | null
+        }
+        Update: {
+          change_reason?: string | null
+          contract_type?: string
+          created_at?: string
+          created_by?: string | null
+          effective_date?: string
+          employee_id?: string
+          id?: string
+          work_regime?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_contract_history_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_contract_history_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_in_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_contract_history_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_out_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_contract_history_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_end_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_contract_history_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_start_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_contract_history_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_pontos_faltantes_semana"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_contract_history_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_contract_history_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_in_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_contract_history_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_out_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_contract_history_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_end_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_contract_history_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_start_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_contract_history_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_pontos_faltantes_semana"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       employee_document_types: {
         Row: {
@@ -1505,6 +1889,131 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "vw_pontos_faltantes_semana"
             referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      employee_job_history: {
+        Row: {
+          change_reason: string | null
+          created_at: string
+          created_by: string | null
+          effective_date: string
+          employee_id: string
+          id: string
+          job_function_id: string | null
+          job_title_label: string | null
+        }
+        Insert: {
+          change_reason?: string | null
+          created_at?: string
+          created_by?: string | null
+          effective_date?: string
+          employee_id: string
+          id?: string
+          job_function_id?: string | null
+          job_title_label?: string | null
+        }
+        Update: {
+          change_reason?: string | null
+          created_at?: string
+          created_by?: string | null
+          effective_date?: string
+          employee_id?: string
+          id?: string
+          job_function_id?: string | null
+          job_title_label?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_job_history_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_job_history_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_in_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_job_history_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_out_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_job_history_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_end_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_job_history_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_start_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_job_history_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_pontos_faltantes_semana"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_job_history_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_job_history_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_in_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_job_history_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_out_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_job_history_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_end_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_job_history_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_start_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_job_history_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_pontos_faltantes_semana"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_job_history_job_function_id_fkey"
+            columns: ["job_function_id"]
+            isOneToOne: false
+            referencedRelation: "job_functions"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2642,6 +3151,44 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      obras_despesas_manuais: {
+        Row: {
+          created_at: string
+          data: string
+          descricao: string
+          id: string
+          obra_id: string
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          created_at?: string
+          data: string
+          descricao: string
+          id?: string
+          obra_id: string
+          updated_at?: string
+          valor: number
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          descricao?: string
+          id?: string
+          obra_id?: string
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "obras_despesas_manuais_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
             referencedColumns: ["id"]
           },
         ]
@@ -4022,20 +4569,27 @@ export type Database = {
           admission_date: string | null
           atividade_aberta: boolean
           birth_date: string | null
+          cae_code: string | null
           can_access_tcobras: boolean
           can_register_time: boolean
           city: string | null
+          contract_type: string | null
+          contractual_monthly_salary: number | null
           contratado: boolean | null
           created_at: string
           department_id: string | null
+          education_level: string | null
           email: string
           employee_code: string | null
+          establishment_id: string | null
           gender: string | null
           hourly_rate: number
           iban: string | null
           id: string
+          job_description: string | null
           job_function_id: string | null
           name: string
+          nationality: string | null
           nif: string | null
           niss: string | null
           nome_seguradora_acidente: string | null
@@ -4049,6 +4603,7 @@ export type Database = {
           phone: string | null
           photo: string | null
           postal_code: string | null
+          professional_activity_start_date: string | null
           role: string
           seguro_contracidentes: boolean | null
           shift_id: string | null
@@ -4056,26 +4611,35 @@ export type Database = {
           termination_date: string | null
           updated_at: string
           use_location_tracking: boolean
+          work_regime: string | null
+          worker_register_notes: string | null
         }
         Insert: {
           address?: string | null
           admission_date?: string | null
           atividade_aberta?: boolean
           birth_date?: string | null
+          cae_code?: string | null
           can_access_tcobras?: boolean
           can_register_time?: boolean
           city?: string | null
+          contract_type?: string | null
+          contractual_monthly_salary?: number | null
           contratado?: boolean | null
           created_at?: string
           department_id?: string | null
+          education_level?: string | null
           email: string
           employee_code?: string | null
+          establishment_id?: string | null
           gender?: string | null
           hourly_rate?: number
           iban?: string | null
           id: string
+          job_description?: string | null
           job_function_id?: string | null
           name: string
+          nationality?: string | null
           nif?: string | null
           niss?: string | null
           nome_seguradora_acidente?: string | null
@@ -4089,6 +4653,7 @@ export type Database = {
           phone?: string | null
           photo?: string | null
           postal_code?: string | null
+          professional_activity_start_date?: string | null
           role?: string
           seguro_contracidentes?: boolean | null
           shift_id?: string | null
@@ -4096,26 +4661,35 @@ export type Database = {
           termination_date?: string | null
           updated_at?: string
           use_location_tracking?: boolean
+          work_regime?: string | null
+          worker_register_notes?: string | null
         }
         Update: {
           address?: string | null
           admission_date?: string | null
           atividade_aberta?: boolean
           birth_date?: string | null
+          cae_code?: string | null
           can_access_tcobras?: boolean
           can_register_time?: boolean
           city?: string | null
+          contract_type?: string | null
+          contractual_monthly_salary?: number | null
           contratado?: boolean | null
           created_at?: string
           department_id?: string | null
+          education_level?: string | null
           email?: string
           employee_code?: string | null
+          establishment_id?: string | null
           gender?: string | null
           hourly_rate?: number
           iban?: string | null
           id?: string
+          job_description?: string | null
           job_function_id?: string | null
           name?: string
+          nationality?: string | null
           nif?: string | null
           niss?: string | null
           nome_seguradora_acidente?: string | null
@@ -4129,6 +4703,7 @@ export type Database = {
           phone?: string | null
           photo?: string | null
           postal_code?: string | null
+          professional_activity_start_date?: string | null
           role?: string
           seguro_contracidentes?: boolean | null
           shift_id?: string | null
@@ -4136,6 +4711,8 @@ export type Database = {
           termination_date?: string | null
           updated_at?: string
           use_location_tracking?: boolean
+          work_regime?: string | null
+          worker_register_notes?: string | null
         }
         Relationships: [
           {
@@ -4143,6 +4720,13 @@ export type Database = {
             columns: ["department_id"]
             isOneToOne: false
             referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "company_establishments"
             referencedColumns: ["id"]
           },
           {
@@ -6313,6 +6897,7 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      has_active_tcrh_session: { Args: never; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
