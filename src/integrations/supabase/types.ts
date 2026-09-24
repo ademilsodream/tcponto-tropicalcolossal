@@ -4745,6 +4745,176 @@ export type Database = {
           },
         ]
       }
+      propostas_orcamento: {
+        Row: {
+          arquivo_nome_original: string | null
+          arquivo_path: string | null
+          arquivo_tipo: string
+          cliente_nome: string | null
+          created_at: string
+          data_orcamento: string | null
+          id: string
+          iva_percent: number | null
+          metadados_empresa: Json | null
+          morada: string | null
+          numero_orc: string | null
+          ref_externa: string | null
+          revisao: string | null
+          titulo: string | null
+          total_com_iva: number | null
+          total_sem_iva: number | null
+          updated_at: string
+        }
+        Insert: {
+          arquivo_nome_original?: string | null
+          arquivo_path?: string | null
+          arquivo_tipo: string
+          cliente_nome?: string | null
+          created_at?: string
+          data_orcamento?: string | null
+          id?: string
+          iva_percent?: number | null
+          metadados_empresa?: Json | null
+          morada?: string | null
+          numero_orc?: string | null
+          ref_externa?: string | null
+          revisao?: string | null
+          titulo?: string | null
+          total_com_iva?: number | null
+          total_sem_iva?: number | null
+          updated_at?: string
+        }
+        Update: {
+          arquivo_nome_original?: string | null
+          arquivo_path?: string | null
+          arquivo_tipo?: string
+          cliente_nome?: string | null
+          created_at?: string
+          data_orcamento?: string | null
+          id?: string
+          iva_percent?: number | null
+          metadados_empresa?: Json | null
+          morada?: string | null
+          numero_orc?: string | null
+          ref_externa?: string | null
+          revisao?: string | null
+          titulo?: string | null
+          total_com_iva?: number | null
+          total_sem_iva?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      propostas_orcamento_linhas: {
+        Row: {
+          created_at: string
+          designacao: string
+          id: string
+          ordem: number
+          parent_id: string | null
+          proposta_id: string
+          quantidade: number | null
+          ref_codigo: string | null
+          sem_preco: boolean
+          tipo_linha: string
+          total_capitulo: boolean
+          unidade: string | null
+          updated_at: string
+          valor_auxiliar: number | null
+          valor_total: number | null
+          valor_unitario: number | null
+        }
+        Insert: {
+          created_at?: string
+          designacao?: string
+          id?: string
+          ordem?: number
+          parent_id?: string | null
+          proposta_id: string
+          quantidade?: number | null
+          ref_codigo?: string | null
+          sem_preco?: boolean
+          tipo_linha: string
+          total_capitulo?: boolean
+          unidade?: string | null
+          updated_at?: string
+          valor_auxiliar?: number | null
+          valor_total?: number | null
+          valor_unitario?: number | null
+        }
+        Update: {
+          created_at?: string
+          designacao?: string
+          id?: string
+          ordem?: number
+          parent_id?: string | null
+          proposta_id?: string
+          quantidade?: number | null
+          ref_codigo?: string | null
+          sem_preco?: boolean
+          tipo_linha?: string
+          total_capitulo?: boolean
+          unidade?: string | null
+          updated_at?: string
+          valor_auxiliar?: number | null
+          valor_total?: number | null
+          valor_unitario?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "propostas_orcamento_linhas_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "propostas_orcamento_linhas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "propostas_orcamento_linhas_proposta_id_fkey"
+            columns: ["proposta_id"]
+            isOneToOne: false
+            referencedRelation: "propostas_orcamento"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      propostas_orcamento_notas: {
+        Row: {
+          conteudo: string
+          created_at: string
+          id: string
+          ordem: number
+          proposta_id: string
+          secao: string
+          updated_at: string
+        }
+        Insert: {
+          conteudo?: string
+          created_at?: string
+          id?: string
+          ordem?: number
+          proposta_id: string
+          secao?: string
+          updated_at?: string
+        }
+        Update: {
+          conteudo?: string
+          created_at?: string
+          id?: string
+          ordem?: number
+          proposta_id?: string
+          secao?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "propostas_orcamento_notas_proposta_id_fkey"
+            columns: ["proposta_id"]
+            isOneToOne: false
+            referencedRelation: "propostas_orcamento"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       push_tokens: {
         Row: {
           created_at: string | null
@@ -5212,6 +5382,92 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      service_contract_history: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          employee_id: string
+          file_name: string
+          form_snapshot: Json
+          id: string
+          obra_id: string | null
+          pdf_path: string
+          provider_name: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          employee_id: string
+          file_name: string
+          form_snapshot: Json
+          id?: string
+          obra_id?: string | null
+          pdf_path: string
+          provider_name: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          employee_id?: string
+          file_name?: string
+          form_snapshot?: Json
+          id?: string
+          obra_id?: string | null
+          pdf_path?: string
+          provider_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_contract_history_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_contract_history_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_in_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "service_contract_history_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_out_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "service_contract_history_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_end_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "service_contract_history_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_start_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "service_contract_history_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_pontos_faltantes_semana"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "service_contract_history_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       servicos_base: {
         Row: {
@@ -6907,6 +7163,7 @@ export type Database = {
       }
       is_active_employee: { Args: never; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
+      is_admin_any: { Args: never; Returns: boolean }
       is_admin_user: { Args: never; Returns: boolean }
       is_month_closed: { Args: { check_date: string }; Returns: boolean }
       is_national_holiday: { Args: { check_date: string }; Returns: boolean }
