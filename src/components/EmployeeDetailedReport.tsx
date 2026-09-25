@@ -64,7 +64,6 @@ const EmployeeDetailedReport: React.FC<EmployeeDetailedReportProps> = ({ onBack 
 
   const [records, setRecords] = useState<TimeRecord[]>([]);
   const [loading, setLoading] = useState(false);
-  const [expandedRecordId, setExpandedRecordId] = useState<string | null>(null);
   
   // Estado para armazenar dados do funcionário
   const [userProfile, setUserProfile] = useState<{ hourly_rate: number; overtime_rate: number } | null>(null);
