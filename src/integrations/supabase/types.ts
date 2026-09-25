@@ -4567,12 +4567,15 @@ export type Database = {
         Row: {
           aceito_em: string | null
           aceito_por: string | null
+          cancelado_em: string | null
+          cancelado_por: string | null
           created_at: string
           data_uso: string
           entregue_em: string | null
           entregue_por: string | null
           id: string
           lista_materiais: string
+          motivo_cancelamento: string | null
           motivo_recusa: string | null
           obra_id: string
           observacoes: string | null
@@ -4583,12 +4586,15 @@ export type Database = {
         Insert: {
           aceito_em?: string | null
           aceito_por?: string | null
+          cancelado_em?: string | null
+          cancelado_por?: string | null
           created_at?: string
           data_uso: string
           entregue_em?: string | null
           entregue_por?: string | null
           id?: string
           lista_materiais: string
+          motivo_cancelamento?: string | null
           motivo_recusa?: string | null
           obra_id: string
           observacoes?: string | null
@@ -4599,12 +4605,15 @@ export type Database = {
         Update: {
           aceito_em?: string | null
           aceito_por?: string | null
+          cancelado_em?: string | null
+          cancelado_por?: string | null
           created_at?: string
           data_uso?: string
           entregue_em?: string | null
           entregue_por?: string | null
           id?: string
           lista_materiais?: string
+          motivo_cancelamento?: string | null
           motivo_recusa?: string | null
           obra_id?: string
           observacoes?: string | null
@@ -4618,6 +4627,44 @@ export type Database = {
             columns: ["obra_id"]
             isOneToOne: false
             referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pedidos_materiais_historico: {
+        Row: {
+          alterado_por: string | null
+          created_at: string
+          id: string
+          motivo: string | null
+          pedido_id: string
+          status_anterior: string | null
+          status_novo: string
+        }
+        Insert: {
+          alterado_por?: string | null
+          created_at?: string
+          id?: string
+          motivo?: string | null
+          pedido_id: string
+          status_anterior?: string | null
+          status_novo: string
+        }
+        Update: {
+          alterado_por?: string | null
+          created_at?: string
+          id?: string
+          motivo?: string | null
+          pedido_id?: string
+          status_anterior?: string | null
+          status_novo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pedidos_materiais_historico_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "pedidos_materiais"
             referencedColumns: ["id"]
           },
         ]
