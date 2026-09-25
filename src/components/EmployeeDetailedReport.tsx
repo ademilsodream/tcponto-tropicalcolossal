@@ -348,9 +348,9 @@ const EmployeeDetailedReport: React.FC<EmployeeDetailedReportProps> = ({ onBack 
                           : "border-gray-200 bg-gray-50"
                     )}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <h3 className="text-base font-semibold flex items-center gap-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <h3 className="text-base font-semibold flex items-center gap-2 flex-wrap">
                           {format(dayInfo.date, 'dd/MM/yyyy (EEE)', { locale: ptBR })}
                           {dayInfo.isWeekend && (
                             <span className="text-xs font-medium text-orange-800 bg-orange-200 px-2 py-1 rounded-full">
@@ -358,78 +358,59 @@ const EmployeeDetailedReport: React.FC<EmployeeDetailedReportProps> = ({ onBack 
                             </span>
                           )}
                         </h3>
-                        <div className="flex items-center gap-4 mt-2">
-                          {hasRecords ? (
-                            <>
-                              <p className="text-sm text-gray-600 flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                <span className="font-medium">{formatHoursAsTime(dayTotals?.total || 0)}</span> trabalhadas
-                              </p>
-                              <p className="text-sm text-gray-600">
-                                <span className="font-medium">{dayRecords.length}</span> registro(s)
-                              </p>
-                            </>
-                          ) : (
-                            <p className="text-sm text-gray-500">
-                              {dayInfo.isWeekend ? 'Sem trabalho' : 'Sem registros'}
-                            </p>
+                      </div>
+
+                      {hasRecords && (
+                        <div className="text-right shrink-0">
+                          <div className="flex items-center justify-end gap-1 text-sm text-gray-600">
+                            <Clock className="w-3.5 h-3.5" />
+                            <span className="font-semibold text-blue-600 tabular-nums">{formatHoursAsTime(dayTotals?.total || 0)}</span>
+                            <span>trabalhadas</span>
+                          </div>
+                          {dayTotals && dayTotals.overtime > 0 && (
+                            <div className="text-xs font-medium text-orange-600 mt-0.5">
+                              Extras: {formatHoursAsTime(dayTotals.overtime)}
+                            </div>
                           )}
                         </div>
-                      </div>
-                      
-                      {hasRecords && (
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => toggleExpand(dayInfo.dateKey)} 
-                          className="p-2"
-                        >
-                          {expandedRecordId === dayInfo.dateKey ? 
-                            <ChevronUp className="w-4 h-4" /> : 
-                            <ChevronDown className="w-4 h-4" />
-                          }
-                        </Button>
                       )}
                     </div>
 
-                    {/* Detalhes expandidos */}
-                    {expandedRecordId === dayInfo.dateKey && hasRecords && (
-                      <div className="mt-4 pt-4 border-t border-gray-200">
-                        <div className="space-y-3">
-                          {dayRecords.map((record) => (
-                            <div key={record.id} className="bg-white rounded-lg p-3 border">
-                              <div className="space-y-2 text-sm">
-                                <div className="flex justify-between">
-                                  <span className="text-gray-600">Entrada:</span>
-                                  <span className="font-medium">{record.clock_in || '--:--'}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-gray-600">Início Almoço:</span>
-                                  <span className="font-medium">{record.lunch_start || '--:--'}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-gray-600">Fim Almoço:</span>
-                                  <span className="font-medium">{record.lunch_end || '--:--'}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-gray-600">Saída:</span>
-                                  <span className="font-medium">{record.clock_out || '--:--'}</span>
-                                </div>
-                                <div className="flex justify-between pt-2 border-t border-gray-100">
-                                  <span className="font-medium text-gray-700">Total:</span>
-                                  <span className="font-bold text-blue-600">{formatHoursAsTime(record.total_hours)}</span>
-                                </div>
-                                {dayTotals && dayTotals.overtime > 0 && (
-                                  <div className="flex justify-between pt-2 border-t border-gray-100">
-                                    <span className="font-medium text-orange-700">Horas Extras:</span>
-                                    <span className="font-bold text-orange-600">{formatHoursAsTime(dayTotals.overtime)}</span>
+                    {hasRecords ? (
+                      <div className="mt-3 space-y-2">
+                        {dayRecords.map((record) => (
+                          <div key={record.id} className="bg-white rounded-lg p-2.5 border border-gray-200">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+                              {([
+                                { label: 'Entrada', value: record.clock_in },
+                                { label: 'Início Almoço', value: record.lunch_start },
+                                { label: 'Fim Almoço', value: record.lunch_end },
+                                { label: 'Saída', value: record.clock_out },
+                              ] as const).map((item) => (
+                                <div key={item.label} className="rounded-md bg-gray-50 px-2 py-1.5">
+                                  <div className="text-[10px] uppercase tracking-wide text-gray-500">{item.label}</div>
+                                  <div className={cn('text-sm font-semibold tabular-nums', item.value ? 'text-gray-900' : 'text-gray-400')}>
+                                    {item.value || '--:--'}
                                   </div>
-                                )}
-                              </div>
+                                </div>
+                              ))}
                             </div>
-                          ))}
-                        </div>
+                            <div className="mt-2 pt-1.5 border-t border-gray-100 flex items-center justify-between">
+                              <span className="text-xs text-gray-500">
+                                {dayRecords.length > 1 ? 'Registro' : 'Total do dia'}
+                              </span>
+                              <span className="text-sm font-bold text-blue-600 tabular-nums">{formatHoursAsTime(record.total_hours)}</span>
+                            </div>
+                          </div>
+                        ))}
+                        {dayRecords.length > 1 && (
+                          <p className="text-xs text-gray-500 text-right">{dayRecords.length} registro(s)</p>
+                        )}
                       </div>
+                    ) : (
+                      <p className="text-sm text-gray-500 mt-2">
+                        {dayInfo.isWeekend ? 'Sem trabalho' : 'Sem registros'}
+                      </p>
                     )}
                   </div>
                 );
