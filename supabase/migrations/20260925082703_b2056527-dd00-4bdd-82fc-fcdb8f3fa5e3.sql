@@ -1,0 +1,1 @@
+REVOKE ALL ON public.pedidos_materiais FROM anon;
