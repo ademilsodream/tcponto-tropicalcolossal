@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Calendar as CalendarIconLucide, Clock, DollarSign, ChevronDown, ChevronUp, CalendarIcon, Grid as GridIcon, List as ListIcon } from 'lucide-react';
+import { ArrowLeft, Calendar as CalendarIconLucide, Clock, DollarSign, CalendarIcon, Grid as GridIcon, List as ListIcon } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, parseISO, isValid, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay, eachDayOfInterval, isWeekend } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useCurrency } from '@/contexts/CurrencyContext';
@@ -235,10 +235,6 @@ const EmployeeDetailedReport: React.FC<EmployeeDetailedReportProps> = ({ onBack 
     }
   };
 
-  // Função para expandir/contrair detalhes
-  const toggleExpand = (dateKey: string) => {
-    setExpandedRecordId(expandedRecordId === dateKey ? null : dateKey);
-  };
 
   // Carregar dados quando as datas mudarem
   useEffect(() => {
