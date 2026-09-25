@@ -4563,6 +4563,65 @@ export type Database = {
           },
         ]
       }
+      pedidos_materiais: {
+        Row: {
+          aceito_em: string | null
+          aceito_por: string | null
+          created_at: string
+          data_uso: string
+          entregue_em: string | null
+          entregue_por: string | null
+          id: string
+          lista_materiais: string
+          motivo_recusa: string | null
+          obra_id: string
+          observacoes: string | null
+          solicitante_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          aceito_em?: string | null
+          aceito_por?: string | null
+          created_at?: string
+          data_uso: string
+          entregue_em?: string | null
+          entregue_por?: string | null
+          id?: string
+          lista_materiais: string
+          motivo_recusa?: string | null
+          obra_id: string
+          observacoes?: string | null
+          solicitante_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          aceito_em?: string | null
+          aceito_por?: string | null
+          created_at?: string
+          data_uso?: string
+          entregue_em?: string | null
+          entregue_por?: string | null
+          id?: string
+          lista_materiais?: string
+          motivo_recusa?: string | null
+          obra_id?: string
+          observacoes?: string | null
+          solicitante_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pedidos_materiais_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           address: string | null
