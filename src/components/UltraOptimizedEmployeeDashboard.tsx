@@ -10,7 +10,6 @@ import EmployeeDrawer from '@/components/EmployeeDrawer';
 // ✨ Apenas componentes secundários em lazy loading
 const EmployeeMonthlySummary = React.lazy(() => import('@/components/EmployeeMonthlySummary'));
 const EmployeeDetailedReport = React.lazy(() => import('@/components/EmployeeDetailedReport'));
-const IncompleteRecordsProfile = React.lazy(() => import('@/components/IncompleteRecordsProfile'));
 const AdjustPreviousDays = React.lazy(() => import('@/components/AdjustPreviousDays'));
 const VacationRequest = React.lazy(() => import('@/components/VacationRequest'));
 const EmployeeDocuments = React.lazy(() => import('@/components/EmployeeDocuments'));
@@ -62,12 +61,6 @@ const UltraOptimizedEmployeeDashboard = React.memo(() => {
               selectedMonth={selectedDate}
               {...screenProps}
             />
-          </React.Suspense>
-        );
-      case 'incompleteRecords':
-        return (
-          <React.Suspense fallback={<QuickLoadingSpinner />}>
-            <IncompleteRecordsProfile {...screenProps} />
           </React.Suspense>
         );
       case 'adjustPreviousDays':

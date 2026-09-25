@@ -16,7 +16,6 @@ import PrivacyPolicy from '@/pages/PrivacyPolicy';
 // crítico e não deve esperar por gráficos, PDF ou leitor de QR.
 const EmployeeMonthlySummary = lazy(() => import('@/components/EmployeeMonthlySummary'));
 const EmployeeDetailedReport = lazy(() => import('@/components/EmployeeDetailedReport'));
-const IncompleteRecordsProfile = lazy(() => import('@/components/IncompleteRecordsProfile'));
 const AdjustPreviousDays = lazy(() => import('@/components/AdjustPreviousDays'));
 const VacationRequest = lazy(() => import('@/components/VacationRequest'));
 const EmployeeDocuments = lazy(() => import('@/components/EmployeeDocuments'));
@@ -71,16 +70,6 @@ function App() {
                     <ProtectedRoute>
                       <EmployeeLayout>
                         <EmployeeDetailedReport selectedMonth={new Date()} onBack={() => {}} />
-                      </EmployeeLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/incomplete-records"
-                  element={
-                    <ProtectedRoute>
-                      <EmployeeLayout>
-                        <IncompleteRecordsProfile />
                       </EmployeeLayout>
                     </ProtectedRoute>
                   }
