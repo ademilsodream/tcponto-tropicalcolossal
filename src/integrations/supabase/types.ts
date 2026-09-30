@@ -7301,6 +7301,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      resolve_location_id: {
+        Args: { p_lat: number; p_lng: number; p_name: string }
+        Returns: string
+      }
       send_scheduled_push_notifications: {
         Args: { check_time: string; notification_type: string }
         Returns: undefined
