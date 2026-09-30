@@ -382,18 +382,27 @@ const EmployeeDetailedReport: React.FC<EmployeeDetailedReportProps> = ({ onBack 
                           <div key={record.id} className="bg-white rounded-lg p-2.5 border border-gray-200">
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
                               {([
-                                { label: 'Entrada', value: record.clock_in },
-                                { label: 'Início Almoço', value: record.lunch_start },
-                                { label: 'Fim Almoço', value: record.lunch_end },
-                                { label: 'Saída', value: record.clock_out },
-                              ] as const).map((item) => (
-                                <div key={item.label} className="rounded-md bg-gray-50 px-2 py-1.5">
-                                  <div className="text-[10px] uppercase tracking-wide text-gray-500">{item.label}</div>
-                                  <div className={cn('text-sm font-semibold tabular-nums', item.value ? 'text-gray-900' : 'text-gray-400')}>
-                                    {item.value || '--:--'}
+                                { key: 'clock_in', label: 'Entrada', value: record.clock_in },
+                                { key: 'lunch_start', label: 'Início Almoço', value: record.lunch_start },
+                                { key: 'lunch_end', label: 'Fim Almoço', value: record.lunch_end },
+                                { key: 'clock_out', label: 'Saída', value: record.clock_out },
+                              ] as const).map((item) => {
+                                const locs: any = (record as any).locations;
+                                const obra: string | undefined = locs && typeof locs === 'object' ? locs[item.key]?.locationName : undefined;
+                                return (
+                                  <div key={item.label} className="rounded-md bg-gray-50 px-2 py-1.5">
+                                    <div className="text-[10px] uppercase tracking-wide text-gray-500">{item.label}</div>
+                                    <div className={cn('text-sm font-semibold tabular-nums', item.value ? 'text-gray-900' : 'text-gray-400')}>
+                                      {item.value || '--:--'}
+                                    </div>
+                                    {item.value && (
+                                      <div className="text-[11px] text-gray-600 truncate" title={obra || ''}>
+                                        {obra || 'Obra não informada'}
+                                      </div>
+                                    )}
                                   </div>
-                                </div>
-                              ))}
+                                );
+                              })}
                             </div>
                             <div className="mt-2 pt-1.5 border-t border-gray-100 flex items-center justify-between">
                               <span className="text-xs text-gray-500">
