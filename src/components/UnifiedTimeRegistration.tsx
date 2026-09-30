@@ -431,6 +431,7 @@ const UnifiedTimeRegistration: React.FC = () => {
           longitude: lon,
           timestamp: ts.toISOString(),
           locationName: freshValidation?.closestLocation?.name || 'Desconhecido',
+          ...(freshValidation?.closestLocation?.id ? { locationId: freshValidation.closestLocation.id } : {}),
           // Aceitamos leituras imprecisas desde que dentro do raio; a precisão fica
           // gravada para o RH auditar a incerteza da batida.
           gpsAccuracy: Number.isFinite(freshValidation?.gpsAccuracy) ? Math.round(freshValidation!.gpsAccuracy!) : null,

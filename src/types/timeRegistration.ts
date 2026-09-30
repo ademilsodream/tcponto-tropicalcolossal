@@ -10,6 +10,7 @@ export interface LocationDetails {
   longitude: number;
   timestamp: string;
   locationName: string;
+  locationId?: string;
   gpsAccuracy?: number;
   confidence?: number;
 }
