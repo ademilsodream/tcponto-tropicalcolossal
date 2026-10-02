@@ -55,10 +55,14 @@ const fmtDate = (d: string) => {
   return `${day}/${m}/${y}`;
 };
 
+const isEmAndamento = (status: string | null) =>
+  String(status ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_') === 'em_andamento';
+
 export default function MaterialRequests() {
   const { user } = useOptimizedAuth();
   const { toast } = useToast();
   const [obras, setObras] = useState<{ id: string; nome: string }[]>([]);
+  const [obrasAtivas, setObrasAtivas] = useState<{ id: string; nome: string }[]>([]);
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -81,11 +85,14 @@ export default function MaterialRequests() {
       .from('obras')
       .select('id, nome, status')
       .then(({ data }) => {
-        const list = (data || [])
-          .filter((o: any) => !o.status || !['concluida', 'concluída', 'cancelada', 'inativa'].includes(String(o.status).toLowerCase()))
-          .map((o: any) => ({ id: o.id, nome: o.nome }))
-          .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
-        setObras(list);
+        const all = (data || []).map((o: any) => ({ id: o.id as string, nome: o.nome as string, status: (o.status ?? null) as string | null }));
+        setObras(all.map(({ id, nome }) => ({ id, nome })));
+        setObrasAtivas(
+          all
+            .filter((o) => isEmAndamento(o.status))
+            .map(({ id, nome }) => ({ id, nome }))
+            .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+        );
       });
     loadPedidos();
   }, [loadPedidos]);
@@ -193,9 +200,12 @@ export default function MaterialRequests() {
                 <Select value={form.obra_id} onValueChange={(v) => setForm((f) => ({ ...f, obra_id: v }))}>
                   <SelectTrigger><SelectValue placeholder="Escolha a obra" /></SelectTrigger>
                   <SelectContent>
-                    {obras.map((o) => <SelectItem key={o.id} value={o.id}>{o.nome}</SelectItem>)}
+                    {obrasAtivas.map((o) => <SelectItem key={o.id} value={o.id}>{o.nome}</SelectItem>)}
                   </SelectContent>
                 </Select>
+                {obrasAtivas.length === 0 && (
+                  <p className="text-xs text-muted-foreground">Nenhuma obra em andamento no momento.</p>
+                )}
               </div>
               <div className="space-y-1">
                 <Label>Data de uso dos materiais</Label>
