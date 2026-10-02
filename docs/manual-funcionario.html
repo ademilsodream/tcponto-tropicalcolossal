@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>Manual do Funcionário — TCPonto</title>
+  <style>
+    @page { size: A4; margin: 16mm 14mm 16mm 14mm; }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0;
+      font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      color: #1f2937;
+      font-size: 11.2pt;
+      line-height: 1.45;
+    }
+    .page { page-break-after: always; min-height: 260mm; position: relative; }
+    .page:last-child { page-break-after: auto; }
+    .footer {
+      position: running(footer);
+      display: none;
+    }
+    .page-foot {
+      position: absolute; left: 0; right: 0; bottom: 0;
+      font-size: 8.5pt; color: #6b7280;
+      border-top: 1px solid #e5e7eb;
+      padding-top: 6px;
+      display: flex; justify-content: space-between;
+    }
+    h1, h2, h3 { margin: 0 0 8px; color: #021B40; }
+    p { margin: 0 0 8px; }
+    ul { margin: 6px 0 10px 18px; padding: 0; }
+    li { margin-bottom: 4px; }
+    .cover {
+      background: #021B40;
+      color: #fff;
+      min-height: 265mm;
+      border-radius: 8px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center;
+      padding: 40px 32px;
+    }
+    .cover h1, .cover h2, .cover p { color: #fff; }
+    .cover img { width: 140px; height: 140px; border-radius: 50%; box-shadow: 0 10px 30px rgba(0,0,0,.35); margin-bottom: 28px; }
+    .cover h1 { font-size: 34pt; letter-spacing: .3px; }
+    .cover h2 { font-size: 16pt; font-weight: 500; opacity: .95; margin-bottom: 18px; }
+    .cover .sub { font-size: 12pt; opacity: .8; max-width: 420px; }
+    .cover .ver { margin-top: 40px; font-size: 10pt; opacity: .7; }
+    .split { display: flex; gap: 22px; align-items: flex-start; margin-bottom: 22px; }
+    .split .txt { flex: 1; min-width: 0; }
+    .split .art { width: 210px; flex-shrink: 0; }
+    .sec-num {
+      display: inline-block;
+      background: #021B40; color: #fff;
+      border-radius: 6px; padding: 1px 8px;
+      font-size: 10pt; margin-right: 6px;
+    }
+    .how { background: #f3f6fb; border-left: 4px solid #2563eb; padding: 8px 10px; border-radius: 0 6px 6px 0; margin-top: 8px; }
+    .how ol { margin: 6px 0 0 18px; padding: 0; }
+    .how li { margin-bottom: 3px; }
+    .note { background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; padding: 8px 10px; border-radius: 6px; font-size: 10pt; margin-top: 8px; }
+    .warn { background: #fff7ed; border: 1px solid #fdba74; color: #9a3412; padding: 8px 10px; border-radius: 6px; font-size: 10pt; margin-top: 8px; }
+    .faq { margin-bottom: 12px; }
+    .faq strong { display: block; color: #021B40; margin-bottom: 2px; }
+    .phone {
+      width: 200px; height: 390px;
+      background: #111827; border-radius: 26px;
+      padding: 10px 8px 12px; box-shadow: 0 8px 20px rgba(2,27,64,.18);
+    }
+    .screen {
+      background: #eef2ff; height: 100%; border-radius: 18px; overflow: hidden;
+      display: flex; flex-direction: column; font-size: 8.4pt;
+    }
+    .s-head {
+      background: #fff; padding: 8px 9px 7px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid #e5e7eb; font-weight: 700; color: #111827;
+    }
+    .s-body { padding: 8px; flex: 1; }
+    .card { background: #fff; border-radius: 8px; padding: 8px; margin-bottom: 6px; box-shadow: 0 1px 2px rgba(0,0,0,.05); }
+    .btn { background: #2563eb; color: #fff; text-align: center; border-radius: 6px; padding: 7px 0; font-weight: 600; }
+    .btn-out { background: #fff; color: #1f2937; border: 1px solid #d1d5db; text-align: center; border-radius: 6px; padding: 7px 0; font-weight: 600; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+    .chip { display: inline-block; background: #dbeafe; color: #1e40af; border-radius: 99px; padding: 1px 7px; font-size: 7.5pt; }
+    .chip-red { background: #fee2e2; color: #991b1b; }
+    .chip-green { background: #d1fae5; color: #065f46; }
+    .chip-gray { background: #e5e7eb; color: #374151; }
+    .menu-item { background: #fff; border-radius: 6px; padding: 6px 8px; margin-bottom: 4px; font-weight: 600; }
+    .login-bg { background: #021B40; color: #fff; height: 100%; display: flex; flex-direction: column; align-items: center; padding: 18px 10px; }
+    .login-card { background: #fff; color: #111; width: 100%; border-radius: 10px; padding: 10px; margin-top: 10px; }
+    .field { background: #f3f4f6; border-radius: 5px; height: 18px; margin-bottom: 6px; }
+    .tiny { font-size: 7.4pt; color: #6b7280; }
+    .bar { height: 6px; background: #e5e7eb; border-radius: 99px; overflow: hidden; margin: 4px 0 6px; }
+    .bar > i { display: block; height: 100%; width: 72%; background: #2563eb; }
+    .cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; font-size: 6.8pt; text-align: center; }
+    .cal b { color: #6b7280; }
+    .day { background: #ecfdf5; border-radius: 3px; padding: 3px 0; }
+    .day.off { background: #fee2e2; }
+    .day.muted { background: #f3f4f6; color: #9ca3af; }
+  </style>
+</head>
+<body>
+
+<!-- CAPA -->
+<section class="page">
+  <div class="cover">
+    <img src="logo.png" alt="TCPonto" />
+    <h1>Manual do Funcionário</h1>
+    <h2>TCPonto — Sistema de Controle de Ponto</h2>
+    <p class="sub">Guia simples e ilustrado para usar o aplicativo no dia a dia</p>
+    <p class="ver">Versão 10/2026 · App v5.4</p>
+  </div>
+</section>
+
+<!-- BEM-VINDO -->
+<section class="page">
+  <h2>Bem-vindo ao TCPonto</h2>
+  <p>Este manual mostra, de forma simples e com imagens, como usar o aplicativo <strong>TCPonto</strong> no seu celular. Cada seção explica um menu do app, o que ele serve e como usá-lo. Não é preciso conhecimento técnico — basta seguir os passos.</p>
+  <p><strong>O que você consegue fazer no app</strong></p>
+  <ul>
+    <li>Registrar as batidas de ponto (entrada, almoço e saída), mesmo com GPS fraco, desde que esteja dentro do raio da obra;</li>
+    <li>Bater o ponto sem internet — o app guarda no aparelho e envia quando a rede voltar;</li>
+    <li>Ver o resumo das horas e dias trabalhados no mês;</li>
+    <li>Consultar o espelho de ponto e corrigir dias anteriores;</li>
+    <li>Pedir férias (somente se o seu cadastro for de contratado) e acompanhar o saldo;</li>
+    <li>Acessar e enviar documentos (holerites, atestados, etc.);</li>
+    <li>Ver as ferramentas que estão com você, ler QR Code, transferir ou devolver;</li>
+    <li>Pedir materiais para a obra no menu <strong>Compras</strong>;</li>
+    <li>Solicitar um vale (adiantamento) salarial;</li>
+    <li>Atualizar os dados do seu perfil.</li>
+  </ul>
+  <div class="note">A tela de login mostra a versão do app (ex.: <strong>TCPonto v5.4</strong>). Se a empresa enviar um APK novo, instale por cima do anterior — o nome e o ícone (relógio com seta verde) continuam iguais.</div>
+  <div class="page-foot"><span>TCPonto — Manual do Funcionário</span><span>Página 2</span></div>
+</section>
+
+<!-- 1 LOGIN + 2 MENU -->
+<section class="page">
+  <div class="split">
+    <div class="txt">
+      <h2><span class="sec-num">1</span> Entrando no aplicativo</h2>
+      <p>Ao abrir o app, você verá a tela de login. Digite o e-mail e a senha que a empresa forneceu e toque em <strong>Entrar</strong>. Marque <strong>Lembrar-me</strong> se quiser ficar conectado por mais tempo no seu celular pessoal. A versão do app aparece no rodapé.</p>
+      <div class="how">
+        <strong>Como usar</strong>
+        <ol>
+          <li>Abra o aplicativo TCPonto.</li>
+          <li>Digite seu e-mail no primeiro campo.</li>
+          <li>Digite sua senha (toque no olho para mostrar).</li>
+          <li>Toque em <strong>Entrar</strong>.</li>
+        </ol>
+      </div>
+      <div class="warn">Se o celular avisar que o app está bloqueado pelo Play Protect, toque em <em>Mais detalhes</em> e depois em <em>Instalar mesmo assim</em>. Isso é normal em APK enviado pela empresa.</div>
+    </div>
+    <div class="art">
+      <div class="phone"><div class="screen">
+        <div class="login-bg">
+          <div style="width:46px;height:46px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;">⏱</div>
+          <div style="font-weight:800;font-size:13pt;margin-top:6px;">TCPonto</div>
+          <div class="tiny" style="color:#cbd5e1;">Sistema de Controle de Ponto</div>
+          <div class="login-card">
+            <div style="font-weight:700;text-align:center;margin-bottom:8px;">Entrar no Sistema</div>
+            <div class="tiny">E-mail</div>
+            <div class="field"></div>
+            <div class="tiny">Senha</div>
+            <div class="field"></div>
+            <div class="tiny">☐ Lembrar-me por 30 dias</div>
+            <div class="btn" style="margin-top:8px;">Entrar</div>
+          </div>
+          <div class="tiny" style="color:#94a3b8;margin-top:auto;">TCPonto v5.4</div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="split">
+    <div class="txt">
+      <h2><span class="sec-num">2</span> Menu principal</h2>
+      <p>Toque no botão de <strong>três linhas</strong> no canto superior esquerdo para abrir o menu lateral. É por ele que você acessa todas as áreas do app. No fim do menu há o botão <strong>Sair</strong> para encerrar a sessão.</p>
+      <p>O item <strong>Férias</strong> só aparece se o seu perfil for de contratado. O item <strong>Compras</strong> é o pedido de materiais para a obra.</p>
+      <div class="how">
+        <strong>Como usar</strong>
+        <ol>
+          <li>Toque no ícone de três linhas no topo da tela.</li>
+          <li>Escolha a opção desejada na lista.</li>
+          <li>Para fechar sem escolher, toque fora do menu.</li>
+        </ol>
+      </div>
+    </div>
+    <div class="art">
+      <div class="phone"><div class="screen" style="background:#f8fafc;">
+        <div class="s-head"><span>☰ Menu</span><span class="tiny">Sair</span></div>
+        <div class="s-body">
+          <div class="menu-item">⏱ Registro de Ponto</div>
+          <div class="menu-item">▤ Resumo Mensal</div>
+          <div class="menu-item">▤ Espelho Ponto</div>
+          <div class="menu-item">✎ Ajustar Registros</div>
+          <div class="menu-item">☂ Férias</div>
+          <div class="menu-item">📁 Documentos</div>
+          <div class="menu-item">🔧 Ferramentas</div>
+          <div class="menu-item">🛒 Compras</div>
+          <div class="menu-item">$ Vale Salarial</div>
+          <div class="menu-item">☺ Meu Perfil</div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+  <div class="page-foot"><span>TCPonto — Manual do Funcionário</span><span>Página 3</span></div>
+</section>
+
+<!-- 3 PONTO + 4 RESUMO -->
+<section class="page">
+  <div class="split">
+    <div class="txt">
+      <h2><span class="sec-num">3</span> Registro de Ponto</h2>
+      <p>Esta é a tela principal. Você registra 4 batidas por dia: <strong>entrada</strong>, <strong>início do almoço</strong>, <strong>fim do almoço</strong> e <strong>saída</strong>. Entre uma batida e outra há uma espera de 20 minutos.</p>
+      <p>O app só precisa que você esteja <strong>dentro do raio da obra</strong>. GPS fraco (dentro de galpão, por exemplo) não impede o registro se a posição cair dentro desse raio. Fora da obra o ponto continua recusado.</p>
+      <p>Sem internet, o ponto é guardado no aparelho. Aparece o selo <strong>Offline</strong> e, depois, <strong>pendente</strong> até enviar. O horário que você bateu é o que vale.</p>
+      <div class="how">
+        <strong>Como usar</strong>
+        <ol>
+          <li>Confira seu nome e a data.</li>
+          <li>Toque em <strong>Registrar</strong> e aguarde “Confirmando GPS…”.</li>
+          <li>Se estiver dentro da obra, a batida é gravada.</li>
+          <li>Sem sinal, o app avisa que guardou no aparelho.</li>
+        </ol>
+      </div>
+    </div>
+    <div class="art">
+      <div class="phone"><div class="screen">
+        <div class="s-head"><span>⏱ Registro de Ponto</span><span class="chip">1 pendente</span></div>
+        <div class="s-body">
+          <div class="card">
+            <div class="tiny">FUNCIONÁRIO</div>
+            <div style="font-weight:700;">Maria Silva</div>
+            <div style="font-size:16pt;font-weight:800;margin:6px 0 2px;">08:05</div>
+            <div class="tiny">sexta-feira, 2 de outubro</div>
+            <div class="row2" style="margin-top:8px;">
+              <div class="btn">Registrar</div>
+              <div class="btn-out">Calibrar GPS</div>
+            </div>
+            <div class="tiny" style="margin-top:6px;">Obra Centro · 12 m</div>
+          </div>
+          <div class="card">
+            <div class="tiny">HOJE</div>
+            <div>Entrada <strong>07:58</strong></div>
+            <div class="tiny">Almoço · Volta · Saída</div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="split">
+    <div class="txt">
+      <h2><span class="sec-num">4</span> Resumo Mensal</h2>
+      <p>Mostra o resumo das suas horas no mês selecionado: dias trabalhados, horas feitas, horas previstas, extras e tempo de almoço. Use as setas ou os seletores para trocar o mês e o ano.</p>
+      <div class="how">
+        <strong>Como usar</strong>
+        <ol>
+          <li>Selecione o mês e o ano no topo.</li>
+          <li>Veja a barra de progresso (horas feitas / previstas).</li>
+          <li>Confira os cartões com dias e horas.</li>
+        </ol>
+      </div>
+    </div>
+    <div class="art">
+      <div class="phone"><div class="screen">
+        <div class="s-head"><span>▤ Resumo Mensal</span></div>
+        <div class="s-body">
+          <div class="card">
+            <div style="font-weight:700;">Outubro 2026</div>
+            <div class="tiny">Horas feitas / previstas</div>
+            <div class="bar"><i></i></div>
+            <div>126:00 / 176:00</div>
+          </div>
+          <div class="row2">
+            <div class="card">Dias<br><strong>16</strong></div>
+            <div class="card">Extras<br><strong>08:20</strong></div>
+          </div>
+          <div class="card">Almoço acumulado<br><strong>16:00</strong></div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+  <div class="page-foot"><span>TCPonto — Manual do Funcionário</span><span>Página 4</span></div>
+</section>
+
+<!-- 5 ESPELHO + 6 AJUSTAR -->
+<section class="page">
+  <div class="split">
+    <div class="txt">
+      <h2><span class="sec-num">5</span> Espelho Ponto</h2>
+      <p>É o extrato detalhado do seu ponto. Escolha o período e veja todos os dias, com as horas e as batidas. Toque em um dia para abrir os detalhes. Fins de semana e dias sem trabalho aparecem destacados.</p>
+      <div class="how">
+        <strong>Como usar</strong>
+        <ol>
+          <li>Escolha a Data Inicial e a Data Final.</li>
+          <li>Role a lista para ver os dias do período.</li>
+          <li>Toque em uma data para ver as batidas daquele dia.</li>
+        </ol>
+      </div>
+    </div>
+    <div class="art">
+      <div class="phone"><div class="screen">
+        <div class="s-head"><span>▤ Espelho Ponto</span></div>
+        <div class="s-body">
+          <div class="card tiny">01/10/2026 — 31/10/2026</div>
+          <div class="card"><strong>02/10</strong> · 08:42<br><span class="tiny">07:58 · 12:01 · 13:02 · 17:40</span></div>
+          <div class="card"><strong>01/10</strong> · 08:35<br><span class="tiny">08:02 · 12:00 · 13:00 · 17:35</span></div>
+          <div class="card" style="opacity:.7;"><strong>28/09</strong> Domingo</div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="split">
+    <div class="txt">
+      <h2><span class="sec-num">6</span> Ajustar Registros</h2>
+      <p>Use esta tela para corrigir ou completar batidas de um dia. O calendário marca em <strong>verde</strong> os dias que ainda podem ser ajustados e em <strong>vermelho</strong> os que já foram editados ou estão bloqueados. Toque no dia e ajuste os horários no formulário. Em alguns casos o gestor precisa aprovar.</p>
+      <div class="how">
+        <strong>Como usar</strong>
+        <ol>
+          <li>Navegue pelos meses com as setas.</li>
+          <li>Toque em um dia verde para selecionar.</li>
+          <li>Edite os horários e informe o motivo.</li>
+          <li>Salve as alterações.</li>
+        </ol>
+      </div>
+      <div class="note">O menu antigo “Registros Incompletos” foi removido. Dias com batida faltando agora se resolvem aqui ou se consultam no Espelho Ponto.</div>
+    </div>
+    <div class="art">
+      <div class="phone"><div class="screen">
+        <div class="s-head"><span>✎ Ajustar Registros</span></div>
+        <div class="s-body">
+          <div class="card">
+            <div style="font-weight:700;margin-bottom:6px;">Outubro 2026</div>
+            <div class="cal">
+              <b>D</b><b>S</b><b>T</b><b>Q</b><b>Q</b><b>S</b><b>S</b>
+              <div class="day muted">28</div><div class="day muted">29</div><div class="day muted">30</div>
+              <div class="day">1</div><div class="day">2</div><div class="day">3</div><div class="day off">4</div>
+              <div class="day off">5</div><div class="day">6</div><div class="day">7</div><div class="day">8</div>
+              <div class="day">9</div><div class="day">10</div><div class="day off">11</div>
+            </div>
+          </div>
+          <div class="card tiny">Dia 2 selecionado<br>Entrada 07:58 · Saída —</div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+  <div class="page-foot"><span>TCPonto — Manual do Funcionário</span><span>Página 5</span></div>
+</section>
+
+<!-- 7 FERIAS + 8 DOCS -->
+<section class="page">
+  <div class="split">
+    <div class="txt">
+      <h2><span class="sec-num">7</span> Férias</h2>
+      <p>Aqui você solicita as férias. O app mostra o saldo disponível e até quando cada período pode ser usado. Escolha a data de início e a de término — os dias são calculados automaticamente — e envie. Acompanhe o andamento no histórico.</p>
+      <div class="how">
+        <strong>Como usar</strong>
+        <ol>
+          <li>Confira o saldo disponível.</li>
+          <li>Toque em Data de início e escolha o dia.</li>
+          <li>Toque em Data de término e escolha o dia.</li>
+          <li>Toque em <strong>Solicitar Férias</strong>.</li>
+        </ol>
+      </div>
+      <div class="warn">Este menu só aparece para quem está cadastrado como <strong>contratado</strong>. Se você não vê Férias, o seu perfil não tem esse direito — fale com o RH.</div>
+    </div>
+    <div class="art">
+      <div class="phone"><div class="screen">
+        <div class="s-head"><span>☂ Férias</span></div>
+        <div class="s-body">
+          <div class="card">Saldo disponível<br><strong>30 dias</strong><div class="tiny">Prazo de gozo até 15/03/2027</div></div>
+          <div class="card">Início<br><div class="field"></div>Término<br><div class="field"></div><div class="tiny">12 dias selecionados</div></div>
+          <div class="btn">Solicitar Férias</div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="split">
+    <div class="txt">
+      <h2><span class="sec-num">8</span> Documentos</h2>
+      <p>Local dos documentos que a empresa envia (holerites, recibos) e onde você envia os seus (atestados, comprovantes). Use a busca e os filtros. Toque em <strong>Baixar</strong> para abrir.</p>
+      <div class="how">
+        <strong>Como usar</strong>
+        <ol>
+          <li>Use a busca para encontrar pelo nome.</li>
+          <li>Filtre por tipo ou categoria, se quiser.</li>
+          <li>Toque em <strong>Baixar</strong> para abrir o arquivo.</li>
+          <li>Toque em <strong>Enviar Documento</strong> para anexar um novo.</li>
+        </ol>
+      </div>
+    </div>
+    <div class="art">
+      <div class="phone"><div class="screen">
+        <div class="s-head"><span>📁 Documentos</span></div>
+        <div class="s-body">
+          <div class="field" style="height:22px;"></div>
+          <div class="card"><strong>Holerite set/2026</strong><div class="tiny">Folha · PDF</div><div class="btn" style="margin-top:6px;padding:5px 0;">Baixar</div></div>
+          <div class="card"><strong>Atestado 12/09</strong><div class="tiny">Enviado por você</div></div>
+          <div class="btn-out">Enviar Documento</div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+  <div class="page-foot"><span>TCPonto — Manual do Funcionário</span><span>Página 6</span></div>
+</section>
+
+<!-- 9 FERRAMENTAS + 10 COMPRAS -->
+<section class="page">
+  <div class="split">
+    <div class="txt">
+      <h2><span class="sec-num">9</span> Ferramentas</h2>
+      <p>Mostra as ferramentas sob a sua responsabilidade, com patrimônio, modelo e a obra. Você pode <strong>transferir para outra obra</strong>, <strong>passar para outro funcionário</strong> ou <strong>devolver</strong> (uma ou várias de uma vez). O botão <strong>Ler QR Code</strong> registra a ferramenta lendo a etiqueta com a câmera; em seguida você escolhe a obra de destino.</p>
+      <div class="how">
+        <strong>Como usar</strong>
+        <ol>
+          <li>Veja a lista das ferramentas vinculadas a você.</li>
+          <li>Toque em <strong>Ler QR Code</strong> e aponte a câmera para a etiqueta.</li>
+          <li>Escolha a obra de destino.</li>
+          <li>Use <strong>Transferir</strong> ou <strong>Devolver</strong> quando precisar.</li>
+        </ol>
+      </div>
+    </div>
+    <div class="art">
+      <div class="phone"><div class="screen">
+        <div class="s-head"><span>🔧 Ferramentas</span></div>
+        <div class="s-body">
+          <div class="btn" style="margin-bottom:6px;">Ler QR Code</div>
+          <div class="card"><strong>Furadeira 500W</strong><div class="tiny">Pat. 1044 · Obra Centro</div><span class="chip">Em obra</span>
+            <div class="row2" style="margin-top:6px;"><div class="btn-out" style="font-size:7.5pt;">Transferir</div><div class="btn-out" style="font-size:7.5pt;">Devolver</div></div>
+          </div>
+          <div class="card"><strong>Nível a laser</strong><div class="tiny">Pat. 0881</div><span class="chip-gray">Disponível</span></div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="split">
+    <div class="txt">
+      <h2><span class="sec-num">10</span> Compras</h2>
+      <p>Novo menu para pedir materiais à obra. Há três abas: <strong>Novo pedido</strong>, <strong>Solicitações</strong> e <strong>Entregues</strong>. O pedido vai para o TCObras; o estado atualiza sozinho no app (Pendente, Aceito, Recusado, Entregue ou Cancelado).</p>
+      <div class="how">
+        <strong>Como usar</strong>
+        <ol>
+          <li>Abra <strong>Compras</strong> no menu.</li>
+          <li>Escolha a obra e a data em que os materiais serão usados (não pode ser no passado).</li>
+          <li>Escreva a lista, por exemplo: “20 sacos de cimento, 5 tubos PVC 50mm”.</li>
+          <li>Toque em <strong>Enviar pedido</strong>.</li>
+          <li>Acompanhe nas abas. Enquanto estiver <em>Pendente</em>, você pode cancelar.</li>
+        </ol>
+      </div>
+    </div>
+    <div class="art">
+      <div class="phone"><div class="screen">
+        <div class="s-head"><span>🛒 Compras</span></div>
+        <div class="s-body">
+          <div class="row2" style="margin-bottom:6px;font-size:7pt;">
+            <div class="chip">Novo pedido</div>
+            <div class="chip-gray">Solicitações</div>
+          </div>
+          <div class="card">
+            <div class="tiny">Obra</div><div class="field"></div>
+            <div class="tiny">Data de uso</div><div class="field"></div>
+            <div class="tiny">Lista de materiais</div>
+            <div class="field" style="height:36px;"></div>
+            <div class="btn">Enviar pedido</div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+  <div class="page-foot"><span>TCPonto — Manual do Funcionário</span><span>Página 7</span></div>
+</section>
+
+<!-- 11 VALE + 12 PERFIL -->
+<section class="page">
+  <div class="split">
+    <div class="txt">
+      <h2><span class="sec-num">11</span> Vale Salarial</h2>
+      <p>Use este menu para solicitar um adiantamento. Toque em <strong>+ Solicitar</strong>, informe o valor e a justificativa. Acompanhe abaixo as solicitações anteriores, com data e status (aprovado, pendente ou recusado). O valor mínimo e o máximo são definidos pela empresa.</p>
+      <div class="how">
+        <strong>Como usar</strong>
+        <ol>
+          <li>Toque em <strong>+ Solicitar</strong>.</li>
+          <li>Informe o valor desejado e o motivo.</li>
+          <li>Confirme o envio.</li>
+          <li>Acompanhe o status em Minhas Solicitações.</li>
+        </ol>
+      </div>
+    </div>
+    <div class="art">
+      <div class="phone"><div class="screen">
+        <div class="s-head"><span>$ Vale Salarial</span></div>
+        <div class="s-body">
+          <div class="btn" style="margin-bottom:6px;">+ Solicitar</div>
+          <div class="card"><strong>R$ 120,00</strong><div class="tiny">02/10/2026</div><span class="chip">Pendente</span></div>
+          <div class="card"><strong>R$ 80,00</strong><div class="tiny">12/09/2026</div><span class="chip-green">Aprovado</span></div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="split">
+    <div class="txt">
+      <h2><span class="sec-num">12</span> Meu Perfil</h2>
+      <p>Mostra seus dados cadastrados: foto, nome, e-mail, telefone, data de nascimento e outras informações. Toque em <strong>Editar</strong> para atualizar os campos liberados. A foto pode ser trocada pela câmera ou pela galeria.</p>
+      <div class="how">
+        <strong>Como usar</strong>
+        <ol>
+          <li>Confira seus dados pessoais.</li>
+          <li>Toque em <strong>Editar</strong> para atualizar.</li>
+          <li>Salve as alterações.</li>
+        </ol>
+      </div>
+    </div>
+    <div class="art">
+      <div class="phone"><div class="screen">
+        <div class="s-head"><span>☺ Meu Perfil</span></div>
+        <div class="s-body">
+          <div class="card" style="text-align:center;">
+            <div style="width:44px;height:44px;border-radius:50%;background:#dbeafe;margin:0 auto 6px;"></div>
+            <strong>Maria Silva</strong>
+            <div class="tiny">maria@empresa.com</div>
+          </div>
+          <div class="card tiny">Telefone<br>Departamento · Função</div>
+          <div class="btn-out">Editar</div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+  <div class="page-foot"><span>TCPonto — Manual do Funcionário</span><span>Página 8</span></div>
+</section>
+
+<!-- FAQ -->
+<section class="page">
+  <h2>Dicas e dúvidas frequentes</h2>
+
+  <div class="faq">
+    <strong>Estou na obra e o app não registra.</strong>
+    Confirme a permissão de localização do TCPonto. Toque em <em>Registrar</em> mesmo com o GPS “impreciso”: se a posição cair dentro do raio da obra, o ponto é aceito. Fora do raio o app recusa e mostra a distância até a obra.
+  </div>
+  <div class="faq">
+    <strong>Esqueci uma batida no dia anterior.</strong>
+    Vá em <em>Ajustar Registros</em>, escolha o dia em verde e preencha o horário. Em alguns casos o gestor precisa aprovar. Consulte o resultado no <em>Espelho Ponto</em>.
+  </div>
+  <div class="faq">
+    <strong>Não aparece o menu Férias.</strong>
+    Só contratados veem esse menu. Se o seu vínculo for outro, fale com o RH.
+  </div>
+  <div class="faq">
+    <strong>Como peço material para a obra?</strong>
+    Menu <em>Compras</em> → Novo pedido → obra, data de uso e lista → Enviar. O andamento (aceito, recusado ou entregue) atualiza sozinho.
+  </div>
+  <div class="faq">
+    <strong>Sou avisado que a sessão vai expirar.</strong>
+    Toque em <em>Renovar Sessão</em> para continuar sem fazer login de novo.
+  </div>
+  <div class="faq">
+    <strong>Como saio do app?</strong>
+    Toque no ícone de sair (porta com seta) no canto superior direito ou no botão <em>Sair</em> no fim do menu.
+  </div>
+  <div class="faq">
+    <strong>Recebi uma notificação. Onde leio?</strong>
+    Toque no sino no topo da tela para abrir os avisos e comunicados da empresa.
+  </div>
+  <div class="faq">
+    <strong>Meu saldo de férias está zerado.</strong>
+    O período aquisitivo pode ainda não ter sido liberado. A tela de Férias informa quando o próximo período ficará disponível.
+  </div>
+  <div class="faq">
+    <strong>O celular bloqueou a instalação do APK.</strong>
+    É o Play Protect. Em Mais detalhes, escolha Instalar mesmo assim. O ícone continua o relógio com a seta verde e o nome TCPonto.
+  </div>
+
+  <p style="margin-top:18px;">Em caso de dúvida, fale com o seu gestor ou com o departamento de Recursos Humanos.</p>
+  <div class="page-foot"><span>TCPonto — Manual do Funcionário</span><span>Página 9</span></div>
+</section>
+
+</body>
+</html>
