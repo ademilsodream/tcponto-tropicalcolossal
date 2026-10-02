@@ -4571,6 +4571,7 @@ export type Database = {
           cancelado_por: string | null
           created_at: string
           data_uso: string
+          email_notificado_em: string | null
           entregue_em: string | null
           entregue_por: string | null
           id: string
@@ -4590,6 +4591,7 @@ export type Database = {
           cancelado_por?: string | null
           created_at?: string
           data_uso: string
+          email_notificado_em?: string | null
           entregue_em?: string | null
           entregue_por?: string | null
           id?: string
@@ -4609,6 +4611,7 @@ export type Database = {
           cancelado_por?: string | null
           created_at?: string
           data_uso?: string
+          email_notificado_em?: string | null
           entregue_em?: string | null
           entregue_por?: string | null
           id?: string
