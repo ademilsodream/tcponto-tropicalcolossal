@@ -28,7 +28,7 @@ interface TimeRecord {
 
 interface TimeRegistrationProgressProps {
   timeRecord: TimeRecord | null;
-  onEditRequest?: (field: TimeRecordKey, value: string) => void; // opcional e não usado
+  onEditRequest?: (field: TimeRecordKey, value: string) => void;
 }
 
 const steps = [
@@ -37,6 +37,13 @@ const steps = [
   { key: 'lunch_end' as TimeRecordKey, label: 'Volta Almoço', icon: Coffee },
   { key: 'clock_out' as TimeRecordKey, label: 'Saída', icon: LogOut },
 ];
+
+const obraForStep = (timeRecord: TimeRecord | null, key: TimeRecordKey): string | null => {
+  const locs = timeRecord?.locations;
+  if (!locs || typeof locs !== 'object') return null;
+  const name = locs[key]?.locationName;
+  return typeof name === 'string' && name.trim() ? name.trim() : null;
+};
 
 export const TimeRegistrationProgress: React.FC<TimeRegistrationProgressProps> = ({ timeRecord }) => {
   const getValue = (key: TimeRecordKey) => timeRecord?.[key];
@@ -57,6 +64,7 @@ export const TimeRegistrationProgress: React.FC<TimeRegistrationProgressProps> =
           const value = getValue(step.key);
           const isCompleted = !!value;
           const isNext = !isCompleted && completedCount === index;
+          const obra = isCompleted ? obraForStep(timeRecord, step.key) : null;
 
           return (
             <div
@@ -95,6 +103,11 @@ export const TimeRegistrationProgress: React.FC<TimeRegistrationProgressProps> =
               >
                 {isCompleted ? String(value).slice(0, 5) : '--:--'}
               </div>
+              {obra && (
+                <div className="mt-1 text-[11px] text-muted-foreground truncate" title={obra}>
+                  {obra}
+                </div>
+              )}
             </div>
           );
         })}

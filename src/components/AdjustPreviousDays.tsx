@@ -26,6 +26,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { fetchAllowedLocationsForEmployee } from '@/utils/employeeAllowedLocations';
+
+type PunchField = 'clock_in' | 'lunch_start' | 'lunch_end' | 'clock_out';
+
+const PUNCH_FIELDS: PunchField[] = ['clock_in', 'lunch_start', 'lunch_end', 'clock_out'];
 
 interface AdjustPreviousDaysProps {
   onBack?: () => void;
@@ -40,6 +45,7 @@ interface TimeRecord {
   clock_out: string | null;
   total_hours: number;
   has_been_edited: boolean;
+  locations?: Record<string, LocationDetailsForEdit & { locationId?: string }>;
 }
 
 interface EditForm {
@@ -48,8 +54,25 @@ interface EditForm {
   lunch_end: string;
   clock_out: string;
   reason: string;
-  locationName: string;
+  locationNameByField: Record<PunchField, string>;
 }
+
+const emptyLocationNames = (): Record<PunchField, string> => ({
+  clock_in: '',
+  lunch_start: '',
+  lunch_end: '',
+  clock_out: '',
+});
+
+const trimTime = (value: string | null | undefined) => (value ? value.substring(0, 5) : '');
+
+const defaultObraForField = (
+  field: PunchField,
+  locations?: Record<string, { locationName?: string }>
+): string => {
+  if (!locations) return '';
+  return locations[field]?.locationName || locations.clock_in?.locationName || '';
+};
 
 interface AllowedLocation {
   id: string;
@@ -100,7 +123,7 @@ const AdjustPreviousDays: React.FC<AdjustPreviousDaysProps> = ({ onBack }) => {
     lunch_end: '',
     clock_out: '',
     reason: '',
-    locationName: ''
+    locationNameByField: emptyLocationNames(),
   });
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -122,10 +145,33 @@ const AdjustPreviousDays: React.FC<AdjustPreviousDaysProps> = ({ onBack }) => {
   useEffect(() => {
     if (user) {
       loadAvailableDates();
-      loadAllowedLocations();
       loadBlockedPeriods();
     }
   }, [user]);
+
+  useEffect(() => {
+    if (profile?.id) {
+      loadAllowedLocations();
+    }
+  }, [profile?.id]);
+
+  useEffect(() => {
+    if (!timeRecord || !isModalOpen) return;
+    const locs = timeRecord.locations;
+    setEditForm({
+      clock_in: trimTime(timeRecord.clock_in),
+      lunch_start: trimTime(timeRecord.lunch_start),
+      lunch_end: trimTime(timeRecord.lunch_end),
+      clock_out: trimTime(timeRecord.clock_out),
+      reason: '',
+      locationNameByField: {
+        clock_in: defaultObraForField('clock_in', locs),
+        lunch_start: defaultObraForField('lunch_start', locs),
+        lunch_end: defaultObraForField('lunch_end', locs),
+        clock_out: defaultObraForField('clock_out', locs),
+      },
+    });
+  }, [timeRecord, isModalOpen]);
 
   const loadAvailableDates = async () => {
     try {
@@ -186,18 +232,10 @@ const AdjustPreviousDays: React.FC<AdjustPreviousDaysProps> = ({ onBack }) => {
   };
 
   const loadAllowedLocations = async () => {
+    if (!profile?.id) return;
     try {
-      const { data, error } = await supabase
-        .from('allowed_locations')
-        .select('id, name, address, latitude, longitude, range_meters, is_active')
-        .eq('is_active', true);
-
-      if (error) throw error;
-
-      const sorted = (data || []).slice().sort((a, b) =>
-        (a.name || '').localeCompare(b.name || '', 'pt-BR', { sensitivity: 'base' })
-      );
-      setAllowedLocations(sorted);
+      const sorted = await fetchAllowedLocationsForEmployee(profile.id);
+      setAllowedLocations(sorted as AllowedLocation[]);
     } catch (error) {
       console.error('Erro ao carregar localizações permitidas:', error);
       toast({
@@ -233,7 +271,8 @@ const AdjustPreviousDays: React.FC<AdjustPreviousDaysProps> = ({ onBack }) => {
           lunch_end: record.lunch_end,
           clock_out: record.clock_out,
           total_hours: record.total_hours || 0,
-          has_been_edited: false
+          has_been_edited: false,
+          locations: (record.locations as unknown as Record<string, LocationDetailsForEdit>) || {},
         });
       } else {
         setTimeRecord({
@@ -244,7 +283,8 @@ const AdjustPreviousDays: React.FC<AdjustPreviousDaysProps> = ({ onBack }) => {
           lunch_end: null,
           clock_out: null,
           total_hours: 0,
-          has_been_edited: false
+          has_been_edited: false,
+          locations: {},
         });
       }
       
@@ -418,9 +458,16 @@ const AdjustPreviousDays: React.FC<AdjustPreviousDaysProps> = ({ onBack }) => {
       lunch_end: '',
       clock_out: '',
       reason: '',
-      locationName: ''
+      locationNameByField: emptyLocationNames(),
     });
     setShiftSchedule(null);
+  };
+
+  const handleLocationChange = (field: PunchField, value: string) => {
+    setEditForm((prev) => ({
+      ...prev,
+      locationNameByField: { ...prev.locationNameByField, [field]: value },
+    }));
   };
 
   const handleSubmitEdit = async () => {
@@ -453,71 +500,68 @@ const AdjustPreviousDays: React.FC<AdjustPreviousDaysProps> = ({ onBack }) => {
       return;
     }
 
-    if (!editForm.locationName) {
-      toast({
-        title: "Erro",
-        description: "Selecione a obra para a solicitação.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setSubmitting(true);
 
     try {
-      const selectedLocationDetails = allowedLocations.find(loc => loc.name === editForm.locationName);
-
-      if (!selectedLocationDetails) {
-        toast({
-          title: "Erro Interno",
-          description: "Detalhes da obra selecionada não encontrados.",
-          variant: "destructive",
-        });
-        setSubmitting(false);
-        return;
-      }
-
-      const locationDetailsForEdit: LocationDetailsForEdit = {
-        address: selectedLocationDetails.address,
-        distance: null,
-        latitude: selectedLocationDetails.latitude,
-        longitude: selectedLocationDetails.longitude,
-        timestamp: new Date().toISOString(),
-        locationName: selectedLocationDetails.name,
-      };
-
-      const requests = [];
-      const fieldColumnMapping = {
+      const fieldColumnMapping: Record<PunchField, 'clockIn' | 'lunchStart' | 'lunchEnd' | 'clockOut'> = {
         clock_in: 'clockIn',
         lunch_start: 'lunchStart',
         lunch_end: 'lunchEnd',
         clock_out: 'clockOut',
       };
 
-      const baseRequest = {
-        employee_id: user.id,
-        employee_name: profile?.name || user.email || 'Usuário',
-        date: format(selectedDate, 'yyyy-MM-dd'),
-        reason: editForm.reason,
-        status: 'pending',
-        location: locationDetailsForEdit,
-        location_name: selectedLocationDetails.name,
-      };
+      const requests = [];
 
-      // Criar solicitações para cada campo alterado
-      Object.entries(fieldColumnMapping).forEach(([formField, dbField]) => {
-        const currentValue = timeRecord[formField as keyof TimeRecord];
-        const newValue = editForm[formField as keyof EditForm];
+      for (const formField of PUNCH_FIELDS) {
+        const currentValue = timeRecord[formField];
+        const newValue = editForm[formField];
+        if (!newValue || newValue === (currentValue || '')) continue;
 
-        if (newValue && newValue !== currentValue) {
-          requests.push({
-            ...baseRequest,
-            field: dbField,
-            old_value: currentValue,
-            new_value: newValue,
+        const obraName = editForm.locationNameByField[formField];
+        if (!obraName) {
+          toast({
+            title: 'Erro',
+            description: `Selecione a obra para ${formField.replace('_', ' ')}.`,
+            variant: 'destructive',
           });
+          setSubmitting(false);
+          return;
         }
-      });
+
+        const selectedLocationDetails = allowedLocations.find((loc) => loc.name === obraName);
+        if (!selectedLocationDetails) {
+          toast({
+            title: 'Erro Interno',
+            description: 'Detalhes da obra selecionada não encontrados.',
+            variant: 'destructive',
+          });
+          setSubmitting(false);
+          return;
+        }
+
+        const existingLoc = timeRecord.locations?.[formField];
+        const locationDetailsForEdit: LocationDetailsForEdit = {
+          address: selectedLocationDetails.address,
+          distance: existingLoc?.distance ?? null,
+          latitude: selectedLocationDetails.latitude,
+          longitude: selectedLocationDetails.longitude,
+          timestamp: new Date().toISOString(),
+          locationName: selectedLocationDetails.name,
+        };
+
+        requests.push({
+          employee_id: user.id,
+          employee_name: profile?.name || user.email || 'Usuário',
+          date: format(selectedDate, 'yyyy-MM-dd'),
+          reason: editForm.reason,
+          status: 'pending',
+          location: locationDetailsForEdit,
+          location_name: selectedLocationDetails.name,
+          field: fieldColumnMapping[formField],
+          old_value: currentValue,
+          new_value: newValue,
+        });
+      }
 
       if (requests.length === 0) {
         toast({
@@ -705,29 +749,9 @@ const AdjustPreviousDays: React.FC<AdjustPreviousDaysProps> = ({ onBack }) => {
 
           {timeRecord && (
             <div className="space-y-6">
-              <div>
-                <Label htmlFor="location" className="text-base font-medium">Obra *</Label>
-                {allowedLocations.length > 0 ? (
-                  <Select
-                    value={editForm.locationName}
-                    onValueChange={(value) => handleInputChange('locationName', value)}
-                    disabled={submitting}
-                  >
-                    <SelectTrigger id="location" className="h-12 text-base">
-                      <SelectValue placeholder="Selecione uma obra" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {allowedLocations.map((location) => (
-                        <SelectItem key={location.id} value={location.name} className="text-base">
-                          {location.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <p className="text-base text-red-500">Nenhuma obra ativa disponível.</p>
-                )}
-              </div>
+              <p className="text-sm text-muted-foreground">
+                Cada batida pode ter uma obra diferente. Escolha a obra correspondente ao horário que alterar.
+              </p>
 
               <div>
                 <Button
@@ -747,66 +771,49 @@ const AdjustPreviousDays: React.FC<AdjustPreviousDaysProps> = ({ onBack }) => {
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="clock_in" className="text-base font-medium">Entrada</Label>
-                  <Input
-                    id="clock_in"
-                    type="time"
-                    value={editForm.clock_in}
-                    onChange={(e) => handleInputChange('clock_in', e.target.value)}
-                    disabled={submitting}
-                    className="h-12 text-base"
-                  />
-                  <div className="text-sm text-gray-500 mt-1">
-                    Atual: {timeRecord.clock_in || 'Não registrado'}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {([
+                  { field: 'clock_in' as PunchField, id: 'clock_in', label: 'Entrada' },
+                  { field: 'lunch_start' as PunchField, id: 'lunch_start', label: 'Início Almoço' },
+                  { field: 'lunch_end' as PunchField, id: 'lunch_end', label: 'Fim Almoço' },
+                  { field: 'clock_out' as PunchField, id: 'clock_out', label: 'Saída' },
+                ]).map(({ field, id, label }) => (
+                  <div key={field} className="space-y-2 rounded-lg border p-3">
+                    <Label htmlFor={id} className="text-base font-medium">{label}</Label>
+                    <Input
+                      id={id}
+                      type="time"
+                      value={editForm[field]}
+                      onChange={(e) => handleInputChange(field, e.target.value)}
+                      disabled={submitting}
+                      className="h-12 text-base"
+                    />
+                    <div className="text-sm text-gray-500">
+                      Atual: {timeRecord[field] || 'Não registrado'}
+                    </div>
+                    <Label className="text-xs text-muted-foreground">Obra desta batida</Label>
+                    {allowedLocations.length > 0 ? (
+                      <Select
+                        value={editForm.locationNameByField[field]}
+                        onValueChange={(value) => handleLocationChange(field, value)}
+                        disabled={submitting}
+                      >
+                        <SelectTrigger className="h-10 text-sm">
+                          <SelectValue placeholder="Selecione a obra" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {allowedLocations.map((location) => (
+                            <SelectItem key={location.id} value={location.name}>
+                              {location.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <p className="text-sm text-red-500">Nenhuma obra liberada.</p>
+                    )}
                   </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="lunch_start" className="text-base font-medium">Início Almoço</Label>
-                  <Input
-                    id="lunch_start"
-                    type="time"
-                    value={editForm.lunch_start}
-                    onChange={(e) => handleInputChange('lunch_start', e.target.value)}
-                    disabled={submitting}
-                    className="h-12 text-base"
-                  />
-                  <div className="text-sm text-gray-500 mt-1">
-                    Atual: {timeRecord.lunch_start || 'Não registrado'}
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="lunch_end" className="text-base font-medium">Fim Almoço</Label>
-                  <Input
-                    id="lunch_end"
-                    type="time"
-                    value={editForm.lunch_end}
-                    onChange={(e) => handleInputChange('lunch_end', e.target.value)}
-                    disabled={submitting}
-                    className="h-12 text-base"
-                  />
-                  <div className="text-sm text-gray-500 mt-1">
-                    Atual: {timeRecord.lunch_end || 'Não registrado'}
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="clock_out" className="text-base font-medium">Saída</Label>
-                  <Input
-                    id="clock_out"
-                    type="time"
-                    value={editForm.clock_out}
-                    onChange={(e) => handleInputChange('clock_out', e.target.value)}
-                    disabled={submitting}
-                    className="h-12 text-base"
-                  />
-                  <div className="text-sm text-gray-500 mt-1">
-                    Atual: {timeRecord.clock_out || 'Não registrado'}
-                  </div>
-                </div>
+                ))}
               </div>
 
               <div>
@@ -843,7 +850,7 @@ const AdjustPreviousDays: React.FC<AdjustPreviousDaysProps> = ({ onBack }) => {
                 <Button
                   onClick={handleSubmitEdit}
                   className="flex-1 h-12 text-base font-semibold"
-                  disabled={submitting || !editForm.reason.trim() || !editForm.locationName || allowedLocations.length === 0 || !hasAnyTimeChanged}
+                  disabled={submitting || !editForm.reason.trim() || allowedLocations.length === 0 || !hasAnyTimeChanged}
                 >
                   {submitting ? (
                     <>

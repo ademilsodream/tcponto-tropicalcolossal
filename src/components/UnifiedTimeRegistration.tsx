@@ -29,6 +29,8 @@ import {
   isRecoverableNetworkError,
   logRegistrationAttempt,
 } from '@/utils/timeRegistrationReliability';
+import { fetchAllowedLocationsForEmployee } from '@/utils/employeeAllowedLocations';
+import { mergeTimeRecordLocations } from '@/utils/timeRecordLocations';
 
 const COOLDOWN_MS = 20 * 60 * 1000; // 20 minutos
 
@@ -189,19 +191,19 @@ const UnifiedTimeRegistration: React.FC = () => {
           return;
         }
 
-        const { data, error } = await supabase
-          .from('allowed_locations')
-          .select('*')
-          .eq('is_active', true)
-          .order('name');
-        if (error) throw error;
-        const formatted = (data || []).map((loc: any) => ({
-          ...loc,
-          latitude: Number(loc.latitude),
-          longitude: Number(loc.longitude),
-          range_meters: Number(loc.range_meters)
-        }));
+        if (!profile?.id) {
+          setAllowedLocations([]);
+          return;
+        }
+        const formatted = await fetchAllowedLocationsForEmployee(profile.id);
         setAllowedLocations(formatted);
+        if (formatted.length === 0) {
+          toast({
+            title: 'Nenhuma obra liberada',
+            description: 'Não há obras permitidas para o seu cadastro. Fale com o RH.',
+            variant: 'destructive',
+          });
+        }
 
         // Persist no cache offline (mantém shift cache existente)
         if (profile?.id) {
@@ -439,10 +441,11 @@ const UnifiedTimeRegistration: React.FC = () => {
       }
 
       // Construir objeto locations mesclado
-      const mergedLocations = {
-        ...(existing?.locations as Record<string, any> || {}),
-        [action]: entry,
-      };
+      const mergedLocations = mergeTimeRecordLocations(
+        existing?.locations as Record<string, any> | undefined,
+        action,
+        entry
+      );
 
       // Valor do campo de tempo com ajuste automático baseado no turno
       let actionTime = now.toTimeString().split(' ')[0].substring(0, 5);
@@ -537,7 +540,13 @@ const UnifiedTimeRegistration: React.FC = () => {
 
           preserved = true;
           logRegistrationAttempt({ stage: 'saved', action, gpsAccuracy: freshValidation?.gpsAccuracy, distance: freshValidation?.distance, locationName: freshValidation?.closestLocation?.name });
-          toast({ title: 'Ponto registrado', description: `${labelMap[action]} foi enviada com sucesso.` });
+          const obraLabel = entry.locationName || freshValidation?.closestLocation?.name;
+          toast({
+            title: 'Ponto registrado',
+            description: obraLabel
+              ? `${labelMap[action]} registrada em ${obraLabel}.`
+              : `${labelMap[action]} foi enviada com sucesso.`,
+          });
           // Completar o endereço da rua em segundo plano, sem travar a tela.
           if (lat && lon) void resolveAddressInBackground(today, action, lat, lon);
           await fetchLastRegistration();
