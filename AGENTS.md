@@ -1,0 +1,1 @@
+- Business card invoice photos go to Google Drive through the connector (edge function upload-fatura-drive, app-created root folder); the database stores only drive_file_id/drive_link. Why: the company keeps invoices in Drive across its systems.
