@@ -14,8 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 const db = supabase as any;
 const eur = (n: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(n || 0);
 
-type Fatura = { id: string; fornecedor_id: string | null; fornecedor_nome_lido: string | null; numero_fatura: string; data_fatura: string; valor: number; drive_link: string | null };
-type Draft = { fornecedor_id: string; fornecedor_nome_lido: string; fornecedor_nif_lido: string; numero_fatura: string; data_fatura: string; valor: string };
+type Fatura = { id: string; fornecedor_id: string | null; fornecedor_nome_lido: string | null; numero_fatura: string; data_fatura: string; valor: number; drive_link: string | null; location_id: string | null };
+type Draft = { fornecedor_id: string; fornecedor_nome_lido: string; fornecedor_nif_lido: string; numero_fatura: string; data_fatura: string; valor: string; location_id: string };
 
 async function errText(error: unknown) {
   if (error instanceof FunctionsHttpError) {
@@ -52,6 +52,7 @@ export default function BusinessCard() {
   const [credito, setCredito] = useState(0);
   const [faturas, setFaturas] = useState<Fatura[]>([]);
   const [fornecedores, setFornecedores] = useState<{ id: string; nome: string }[]>([]);
+  const [obras, setObras] = useState<{ id: string; name: string }[]>([]);
   const [scanning, setScanning] = useState(false);
   const [saving, setSaving] = useState(false);
   const [image, setImage] = useState<{ base64: string; preview: string } | null>(null);
@@ -63,14 +64,16 @@ export default function BusinessCard() {
     const { data: c } = await db.from('business_cards').select('id, card_number, reference_number').eq('employee_id', user.id).eq('is_active', true).maybeSingle();
     setCard(c);
     if (c) {
-      const [{ data: cr }, { data: fs }, { data: fo }] = await Promise.all([
+      const [{ data: cr }, { data: fs }, { data: fo }, { data: ob }] = await Promise.all([
         db.from('business_card_credits').select('amount').eq('card_id', c.id),
-        db.from('business_card_faturas').select('id, fornecedor_id, fornecedor_nome_lido, numero_fatura, data_fatura, valor, drive_link').eq('card_id', c.id).order('data_fatura', { ascending: false }).order('created_at', { ascending: false }),
+        db.from('business_card_faturas').select('id, fornecedor_id, fornecedor_nome_lido, numero_fatura, data_fatura, valor, drive_link, location_id').eq('card_id', c.id).order('data_fatura', { ascending: false }).order('created_at', { ascending: false }),
         db.from('fornecedores').select('id, nome').order('nome'),
+        db.from('allowed_locations').select('id, name').eq('is_active', true),
       ]);
       setCredito((cr || []).reduce((s: number, r: any) => s + Number(r.amount || 0), 0));
       setFaturas(fs || []);
       setFornecedores(fo || []);
+      setObras(((ob || []) as { id: string; name: string }[]).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')));
     }
     setLoading(false);
   }, [user]);
@@ -79,6 +82,7 @@ export default function BusinessCard() {
   const gasto = useMemo(() => faturas.reduce((s, f) => s + Number(f.valor || 0), 0), [faturas]);
   const saldo = credito - gasto;
   const fornNome = useMemo(() => Object.fromEntries(fornecedores.map((f) => [f.id, f.nome])), [fornecedores]);
+  const obraNome = useMemo(() => Object.fromEntries(obras.map((o) => [o.id, o.name])), [obras]);
   const valorNum = Number((draft?.valor || '').replace(',', '.')) || 0;
 
   const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -98,10 +102,11 @@ export default function BusinessCard() {
         numero_fatura: data.numero_fatura || '',
         data_fatura: data.data_fatura && /^\d{4}-\d{2}-\d{2}$/.test(data.data_fatura) ? data.data_fatura : format(new Date(), 'yyyy-MM-dd'),
         valor: data.valor_total != null ? String(data.valor_total) : '',
+        location_id: '',
       });
     } catch (err) {
       toast({ title: 'Não foi possível ler a fatura', description: (err as Error).message, variant: 'destructive' });
-      setDraft({ fornecedor_id: '', fornecedor_nome_lido: '', fornecedor_nif_lido: '', numero_fatura: '', data_fatura: format(new Date(), 'yyyy-MM-dd'), valor: '' });
+      setDraft({ fornecedor_id: '', fornecedor_nome_lido: '', fornecedor_nif_lido: '', numero_fatura: '', data_fatura: format(new Date(), 'yyyy-MM-dd'), valor: '', location_id: '' });
     } finally { setScanning(false); }
   };
 
@@ -126,6 +131,7 @@ export default function BusinessCard() {
         fornecedor_nome_lido: draft.fornecedor_nome_lido || null,
         fornecedor_nif_lido: draft.fornecedor_nif_lido || null,
         numero_fatura: draft.numero_fatura.trim(), data_fatura: draft.data_fatura, valor: valorNum,
+        location_id: draft.location_id || null,
         drive_file_id: up.drive_file_id, drive_link: up.drive_link,
       });
       if (error) throw new Error(error.code === '23505' ? 'Esta fatura já foi registada.' : error.message);
@@ -193,6 +199,13 @@ export default function BusinessCard() {
                 </p>
               )}
             </div>
+            <div className="space-y-1">
+              <Label>Obra</Label>
+              <Select value={draft.location_id} onValueChange={(v) => setDraft({ ...draft, location_id: v })}>
+                <SelectTrigger><SelectValue placeholder="Selecione a obra" /></SelectTrigger>
+                <SelectContent>{obras.map((o) => <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
             <div className="space-y-1"><Label>Nº da fatura</Label><Input value={draft.numero_fatura} onChange={(e) => setDraft({ ...draft, numero_fatura: e.target.value })} /></div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1"><Label>Data</Label><Input type="date" value={draft.data_fatura} onChange={(e) => setDraft({ ...draft, data_fatura: e.target.value })} /></div>
@@ -220,6 +233,7 @@ export default function BusinessCard() {
               <div className="min-w-0">
                 <div className="font-medium truncate">{(f.fornecedor_id && fornNome[f.fornecedor_id]) || f.fornecedor_nome_lido || 'Fornecedor não identificado'}</div>
                 <div className="text-xs text-muted-foreground">Nº {f.numero_fatura} · {format(new Date(f.data_fatura + 'T00:00:00'), 'dd/MM/yyyy')}</div>
+                <div className="text-xs text-muted-foreground truncate">{(f.location_id && obraNome[f.location_id]) || 'Obra não informada'}</div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <span className="font-semibold tabular-nums">{eur(Number(f.valor))}</span>
