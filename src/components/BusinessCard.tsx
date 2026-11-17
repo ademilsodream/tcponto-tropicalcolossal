@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Capacitor } from '@capacitor/core';
-import { capturePhotoFile, requestCameraPermission } from '@/utils/nativeCamera';
+import { capturePhotoFile, requestCameraPermission, takePendingPhotoFile } from '@/utils/nativeCamera';
 
 const db = supabase as any;
 const eur = (n: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(n || 0);
@@ -38,9 +38,10 @@ function compressImage(file: File): Promise<{ base64: string; preview: string }>
       c.getContext('2d')!.drawImage(img, 0, 0, c.width, c.height);
       const url = c.toDataURL('image/jpeg', 0.82);
       URL.revokeObjectURL(img.src);
+      c.width = 0; c.height = 0;
       resolve({ base64: url.split(',')[1], preview: url });
     };
-    img.onerror = reject;
+    img.onerror = () => { URL.revokeObjectURL(img.src); reject(new Error('Imagem inválida')); };
     img.src = URL.createObjectURL(file);
   });
 }
@@ -108,6 +109,16 @@ export default function BusinessCard() {
       setDraft({ fornecedor_id: '', fornecedor_nome_lido: '', fornecedor_nif_lido: '', numero_fatura: '', data_fatura: format(new Date(), 'yyyy-MM-dd'), valor: '', location_id: '' });
     } finally { setScanning(false); }
   };
+
+  // Foto recuperada depois de o Android reiniciar o app durante a câmara
+  useEffect(() => {
+    if (loading || !card) return;
+    const run = () => { takePendingPhotoFile().then((f) => { if (f) processInvoiceFile(f); }).catch((e) => toast({ title: 'Não foi possível recuperar a foto', description: (e as Error).message, variant: 'destructive' })); };
+    run();
+    window.addEventListener('pending-invoice-photo', run);
+    return () => window.removeEventListener('pending-invoice-photo', run);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, card]);
 
   const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
