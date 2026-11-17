@@ -10,6 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Capacitor } from '@capacitor/core';
+import { capturePhotoFile, requestCameraPermission } from '@/utils/nativeCamera';
 
 const db = supabase as any;
 const eur = (n: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(n || 0);
@@ -85,10 +87,7 @@ export default function BusinessCard() {
   const obraNome = useMemo(() => Object.fromEntries(obras.map((o) => [o.id, o.name])), [obras]);
   const valorNum = Number((draft?.valor || '').replace(',', '.')) || 0;
 
-  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file) return;
+  const processInvoiceFile = async (file: File) => {
     setScanning(true);
     try {
       const img = await compressImage(file);
@@ -108,6 +107,39 @@ export default function BusinessCard() {
       toast({ title: 'Não foi possível ler a fatura', description: (err as Error).message, variant: 'destructive' });
       setDraft({ fornecedor_id: '', fornecedor_nome_lido: '', fornecedor_nif_lido: '', numero_fatura: '', data_fatura: format(new Date(), 'yyyy-MM-dd'), valor: '', location_id: '' });
     } finally { setScanning(false); }
+  };
+
+  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    await processInvoiceFile(file);
+  };
+
+  const openCamera = async () => {
+    if (Capacitor.isNativePlatform()) {
+      const granted = await requestCameraPermission();
+      if (!granted) {
+        toast({
+          title: 'Permissão de câmara necessária',
+          description: 'Ative a câmara nas definições do telemóvel para digitalizar faturas.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      try {
+        const file = await capturePhotoFile();
+        if (file) await processInvoiceFile(file);
+      } catch (err) {
+        toast({
+          title: 'Não foi possível abrir a câmara',
+          description: (err as Error).message,
+          variant: 'destructive',
+        });
+      }
+      return;
+    }
+    fileRef.current?.click();
   };
 
   const save = async () => {
@@ -174,9 +206,9 @@ export default function BusinessCard() {
         </CardContent>
       </Card>
 
-      <input ref={fileRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={onFile} />
+      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
       {!draft && (
-        <Button size="lg" className="w-full h-14 text-base" disabled={scanning} onClick={() => fileRef.current?.click()}>
+        <Button size="lg" className="w-full h-14 text-base" disabled={scanning} onClick={openCamera}>
           {scanning ? <><Loader2 className="h-5 w-5 mr-2 animate-spin" />A ler a fatura...</> : <><Camera className="h-5 w-5 mr-2" />Digitalizar fatura</>}
         </Button>
       )}

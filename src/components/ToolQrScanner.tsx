@@ -8,6 +8,8 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Loader2, X } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
+import { requestCameraPermission } from '@/utils/nativeCamera';
 
 interface ToolQrScannerProps {
   open: boolean;
@@ -59,6 +61,16 @@ const ToolQrScanner: React.FC<ToolQrScannerProps> = ({ open, onClose, onScan }) 
       setError(null);
 
       try {
+        if (Capacitor.isNativePlatform()) {
+          const granted = await requestCameraPermission();
+          if (!granted) {
+            if (!cancelled) {
+              setError('Permissão de câmara negada. Ative nas definições do telemóvel.');
+            }
+            return;
+          }
+        }
+
         await stopScanner();
         const scanner = new Html5Qrcode(SCANNER_ID);
         scannerRef.current = scanner;
