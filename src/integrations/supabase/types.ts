@@ -790,6 +790,69 @@ export type Database = {
           },
         ]
       }
+      business_card_faturas: {
+        Row: {
+          card_id: string
+          created_at: string
+          data_fatura: string
+          drive_file_id: string | null
+          drive_link: string | null
+          employee_id: string
+          fornecedor_id: string | null
+          fornecedor_nif_lido: string | null
+          fornecedor_nome_lido: string | null
+          id: string
+          numero_fatura: string
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          card_id: string
+          created_at?: string
+          data_fatura: string
+          drive_file_id?: string | null
+          drive_link?: string | null
+          employee_id: string
+          fornecedor_id?: string | null
+          fornecedor_nif_lido?: string | null
+          fornecedor_nome_lido?: string | null
+          id?: string
+          numero_fatura: string
+          updated_at?: string
+          valor: number
+        }
+        Update: {
+          card_id?: string
+          created_at?: string
+          data_fatura?: string
+          drive_file_id?: string | null
+          drive_link?: string | null
+          employee_id?: string
+          fornecedor_id?: string | null
+          fornecedor_nif_lido?: string | null
+          fornecedor_nome_lido?: string | null
+          id?: string
+          numero_fatura?: string
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_card_faturas_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "business_cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_card_faturas_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_cards: {
         Row: {
           card_code: string | null
