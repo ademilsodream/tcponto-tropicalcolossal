@@ -3,6 +3,7 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useOptimizedAuth } from '@/contexts/OptimizedAuthContext';
 import { Clock } from 'lucide-react';
+import { shouldShowAuthSplash } from '@/utils/authSessionEvents';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -12,7 +13,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { user, profile, isLoading, hasAccess } = useOptimizedAuth();
 
   // ✨ Loading state - aguardando verificação completa
-  if (isLoading) {
+  // (só no arranque: num refresh em segundo plano os children continuam montados)
+  if (shouldShowAuthSplash(isLoading, !!profile)) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary-50 to-accent-50 flex items-center justify-center">
         <div className="text-center">

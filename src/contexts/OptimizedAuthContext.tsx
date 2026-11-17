@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from 'react';
+import { isSilentSessionRefresh } from '@/utils/authSessionEvents';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
 import { useSessionManager } from '@/hooks/useSessionManager';
@@ -60,7 +61,8 @@ export const OptimizedAuthProvider: React.FC<{ children: ReactNode }> = ({ child
 
   useAppDeviceTracking(user?.id);
 
-  const loadProfile = useCallback(async (userId: string) => {
+  const loadProfile = useCallback(async (userId: string, options?: { silent?: boolean }) => {
+    const silent = options?.silent === true;
     if (!userId) {
       debugLog('ERROR', 'Tentativa de carregar perfil sem userId');
       return;
@@ -99,7 +101,8 @@ export const OptimizedAuthProvider: React.FC<{ children: ReactNode }> = ({ child
 
       if (error) {
         debugLog('ERROR', 'Erro ao carregar perfil', { error: error.message, code: error.code });
-        setProfile(null);
+        // Em refresh silencioso um erro transitório não deve bloquear a UI
+        if (!silent) setProfile(null);
         return;
       }
 
@@ -122,9 +125,19 @@ export const OptimizedAuthProvider: React.FC<{ children: ReactNode }> = ({ child
       }
     } catch (error) {
       debugLog('ERROR', 'Erro inesperado ao carregar perfil', { error });
-      setProfile(null);
+      if (!silent) setProfile(null);
     }
   }, [updateSessionActivity]);
+
+  // Refs para o listener de auth ler o estado atual sem re-subscrever
+  const userIdRef = useRef<string | null>(null);
+  const hasProfileRef = useRef(false);
+  const checkSessionExpiryRef = useRef(checkSessionExpiry);
+  const loadProfileRef = useRef(loadProfile);
+  userIdRef.current = user?.id ?? null;
+  hasProfileRef.current = !!profile;
+  checkSessionExpiryRef.current = checkSessionExpiry;
+  loadProfileRef.current = loadProfile;
 
   const refreshProfile = useCallback(async () => {
     if (user?.id) {
@@ -183,18 +196,26 @@ export const OptimizedAuthProvider: React.FC<{ children: ReactNode }> = ({ child
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
       const newUser = session?.user ?? null;
-      setUser(newUser);
-      checkSessionExpiry(session);
+      const silent = isSilentSessionRefresh(event, userIdRef.current, newUser?.id, hasProfileRef.current);
+
+      // Mantém a mesma referência de user quando é o mesmo utilizador (evita recargas em cascata)
+      setUser((prev) => (newUser && prev?.id === newUser.id ? prev : newUser));
+      checkSessionExpiryRef.current(session);
 
       if (event === 'SIGNED_OUT' || !session) {
         setProfile(null);
         setIsLoading(false);
         setSessionWarningDismissed(false);
+      } else if (silent && newUser) {
+        // App voltou do segundo plano (ex.: câmara): atualiza o perfil sem desmontar o ecrã atual
+        setTimeout(() => {
+          if (mounted) void loadProfileRef.current(newUser.id, { silent: true });
+        }, 0);
       } else if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && newUser) {
         setIsLoading(true);
         setTimeout(() => {
           if (mounted) {
-            loadProfile(newUser.id).finally(() => mounted && setIsLoading(false));
+            loadProfileRef.current(newUser.id).finally(() => mounted && setIsLoading(false));
           }
         }, 0);
       }
@@ -208,10 +229,10 @@ export const OptimizedAuthProvider: React.FC<{ children: ReactNode }> = ({ child
           return;
         }
         if (session?.user && mounted) {
-          setUser(session.user);
+          setUser((prev) => (prev?.id === session.user.id ? prev : session.user));
           setIsLoading(true);
-          checkSessionExpiry(session);
-          loadProfile(session.user.id).finally(() => mounted && setIsLoading(false));
+          checkSessionExpiryRef.current(session);
+          loadProfileRef.current(session.user.id).finally(() => mounted && setIsLoading(false));
         } else {
           setUser(null);
           setProfile(null);
@@ -224,7 +245,8 @@ export const OptimizedAuthProvider: React.FC<{ children: ReactNode }> = ({ child
 
     initializeSession();
     return () => { mounted = false; subscription.unsubscribe(); };
-  }, [checkSessionExpiry, loadProfile]);
+    // Subscrição única: o estado atual é lido via refs
+  }, []);
 
   useEffect(() => {
     if (!user) return;

@@ -11,7 +11,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Capacitor } from '@capacitor/core';
-import { capturePhotoFile, requestCameraPermission, takePendingPhotoFile } from '@/utils/nativeCamera';
+import {
+  captureInvoicePhoto,
+  hasPendingInvoiceImage,
+  requestCameraPermission,
+  takePendingInvoiceImage,
+  type InvoiceCapture,
+} from '@/utils/nativeCamera';
+import { describeDiagnostic, parseScanResponse, type ScanDiagnostic, type ScanFields } from '@/utils/scanFaturaResponse';
 
 const db = supabase as any;
 const eur = (n: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(n || 0);
@@ -19,15 +26,22 @@ const eur = (n: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', c
 type Fatura = { id: string; fornecedor_id: string | null; fornecedor_nome_lido: string | null; numero_fatura: string; data_fatura: string; valor: number; drive_link: string | null; location_id: string | null };
 type Draft = { fornecedor_id: string; fornecedor_nome_lido: string; fornecedor_nif_lido: string; numero_fatura: string; data_fatura: string; valor: string; location_id: string };
 
-async function errText(error: unknown) {
+type ScanImage = { base64: string; preview: string; mimeType: 'image/jpeg' | 'image/png' | 'image/webp' };
+
+async function errInfo(error: unknown): Promise<{ message: string; diagnostic?: ScanDiagnostic }> {
   if (error instanceof FunctionsHttpError) {
-    try { const j = await error.context.json(); return j.error || 'Erro'; } catch { return 'Erro'; }
+    try {
+      const j = await error.context.json();
+      return { message: j.error || 'Erro', diagnostic: j.diagnostic };
+    } catch { return { message: 'Erro' }; }
   }
-  return (error as Error)?.message || 'Erro';
+  return { message: (error as Error)?.message || 'Erro' };
+}
+async function errText(error: unknown) {
+  return (await errInfo(error)).message;
 }
 
-// Reduz a foto para envio rápido em rede móvel
-function compressImage(file: File): Promise<{ base64: string; preview: string }> {
+function compressImageFile(file: File): Promise<ScanImage> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
@@ -39,11 +53,28 @@ function compressImage(file: File): Promise<{ base64: string; preview: string }>
       const url = c.toDataURL('image/jpeg', 0.82);
       URL.revokeObjectURL(img.src);
       c.width = 0; c.height = 0;
-      resolve({ base64: url.split(',')[1], preview: url });
+      resolve({ base64: url.split(',')[1], preview: url, mimeType: 'image/jpeg' });
     };
     img.onerror = () => { URL.revokeObjectURL(img.src); reject(new Error('Imagem inválida')); };
     img.src = URL.createObjectURL(file);
   });
+}
+
+async function normalizeImageForScan(
+  input: File | InvoiceCapture
+): Promise<ScanImage> {
+  if (input instanceof File) {
+    return compressImageFile(input);
+  }
+  const mime = input.mimeType;
+  const preview = `data:${mime};base64,${input.base64}`;
+  if (input.base64.length > 6_000_000) {
+    const blob = await (await fetch(preview)).blob();
+    return compressImageFile(new File([blob], 'fatura.jpg', { type: mime }));
+  }
+  const mimeForScan =
+    mime === 'image/png' || mime === 'image/webp' ? mime : ('image/jpeg' as const);
+  return { base64: input.base64, preview, mimeType: mimeForScan };
 }
 
 export default function BusinessCard() {
@@ -58,13 +89,15 @@ export default function BusinessCard() {
   const [obras, setObras] = useState<{ id: string; name: string }[]>([]);
   const [scanning, setScanning] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [image, setImage] = useState<{ base64: string; preview: string } | null>(null);
+  const [image, setImage] = useState<ScanImage | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
+  const [scanIssue, setScanIssue] = useState<{ message: string; detail: string } | null>(null);
 
+  const userId = user?.id;
   const load = useCallback(async () => {
-    if (!user) return;
+    if (!userId) return;
     setLoading(true);
-    const { data: c } = await db.from('business_cards').select('id, card_number, reference_number').eq('employee_id', user.id).eq('is_active', true).maybeSingle();
+    const { data: c } = await db.from('business_cards').select('id, card_number, reference_number').eq('employee_id', userId).eq('is_active', true).maybeSingle();
     setCard(c);
     if (c) {
       const [{ data: cr }, { data: fs }, { data: fo }, { data: ob }] = await Promise.all([
@@ -79,7 +112,7 @@ export default function BusinessCard() {
       setObras(((ob || []) as { id: string; name: string }[]).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')));
     }
     setLoading(false);
-  }, [user]);
+  }, [userId]);
   useEffect(() => { load(); }, [load]);
 
   const gasto = useMemo(() => faturas.reduce((s, f) => s + Number(f.valor || 0), 0), [faturas]);
@@ -88,43 +121,97 @@ export default function BusinessCard() {
   const obraNome = useMemo(() => Object.fromEntries(obras.map((o) => [o.id, o.name])), [obras]);
   const valorNum = Number((draft?.valor || '').replace(',', '.')) || 0;
 
-  const processInvoiceFile = async (file: File) => {
-    setScanning(true);
-    try {
-      const img = await compressImage(file);
-      setImage(img);
-      const { data, error } = await supabase.functions.invoke('scan-fatura', { body: { image: img.base64, mimeType: 'image/jpeg' } });
-      if (error) throw new Error(await errText(error));
-      setDraft({
-        fornecedor_id: data.fornecedor_id || '',
-        fornecedor_nome_lido: data.fornecedor_nome || '',
-        fornecedor_nif_lido: data.fornecedor_nif || '',
-        numero_fatura: data.numero_fatura || '',
-        data_fatura: data.data_fatura && /^\d{4}-\d{2}-\d{2}$/.test(data.data_fatura) ? data.data_fatura : format(new Date(), 'yyyy-MM-dd'),
-        valor: data.valor_total != null ? String(data.valor_total) : '',
-        location_id: '',
-      });
-    } catch (err) {
-      toast({ title: 'Não foi possível ler a fatura', description: (err as Error).message, variant: 'destructive' });
-      setDraft({ fornecedor_id: '', fornecedor_nome_lido: '', fornecedor_nif_lido: '', numero_fatura: '', data_fatura: format(new Date(), 'yyyy-MM-dd'), valor: '', location_id: '' });
-    } finally { setScanning(false); }
+  const applyScanResult = (f: ScanFields) => {
+    setDraft({
+      fornecedor_id: f.fornecedor_id,
+      fornecedor_nome_lido: f.fornecedor_nome,
+      fornecedor_nif_lido: f.fornecedor_nif,
+      numero_fatura: f.numero_fatura,
+      data_fatura: /^\d{4}-\d{2}-\d{2}$/.test(f.data_fatura) ? f.data_fatura : format(new Date(), 'yyyy-MM-dd'),
+      valor: f.valor_total,
+      location_id: '',
+    });
   };
 
-  // Foto recuperada depois de o Android reiniciar o app durante a câmara
+  const emptyDraft = (): Draft => ({
+    fornecedor_id: '',
+    fornecedor_nome_lido: '',
+    fornecedor_nif_lido: '',
+    numero_fatura: '',
+    data_fatura: format(new Date(), 'yyyy-MM-dd'),
+    valor: '',
+    location_id: '',
+  });
+
+  const processInvoiceImage = async (input: File | InvoiceCapture) => {
+    setScanning(true);
+    setScanIssue(null);
+    let photoKb: number | undefined;
+    try {
+      const img = await normalizeImageForScan(input);
+      photoKb = Math.round((img.base64.length * 3) / 4 / 1024);
+      setImage(img);
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        throw new Error('Sessão expirada. Faça login novamente.');
+      }
+      const { data, error } = await supabase.functions.invoke('scan-fatura', {
+        body: { image: img.base64, mimeType: img.mimeType },
+      });
+      if (error) {
+        const info = await errInfo(error);
+        const e = new Error(info.message) as Error & { diagnostic?: ScanDiagnostic };
+        e.diagnostic = info.diagnostic;
+        throw e;
+      }
+      const parsed = parseScanResponse(data);
+      if (!parsed.ok) {
+        setScanIssue({ message: parsed.reason, detail: describeDiagnostic(parsed.diagnostic, photoKb) });
+        setDraft(emptyDraft());
+        return;
+      }
+      applyScanResult(parsed.fields);
+    } catch (err) {
+      const message = (err as Error).message || 'Erro desconhecido';
+      const diagnostic = (err as { diagnostic?: ScanDiagnostic }).diagnostic;
+      setScanIssue({ message, detail: describeDiagnostic(diagnostic, photoKb) });
+      toast({ title: 'Não foi possível ler a fatura', description: message, variant: 'destructive' });
+      setDraft(emptyDraft());
+    } finally {
+      setScanning(false);
+    }
+  };
+
+  // Rede de segurança: foto pendente quando o Android realmente reinicia o app durante a câmara
+  const recoverPendingPhoto = useCallback(async () => {
+    if (!hasPendingInvoiceImage()) return;
+    toast({ title: 'A processar foto…', description: 'A ler a fatura digitalizada.' });
+    const pending = await takePendingInvoiceImage();
+    if (!pending) {
+      toast({
+        title: 'Foto não recuperada',
+        description: 'A foto perdeu-se ao voltar da câmara. Tente digitalizar outra vez.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    await processInvoiceImage(pending);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- processInvoiceImage is stable enough for this flow
+  }, [toast]);
+
   useEffect(() => {
     if (loading || !card) return;
-    const run = () => { takePendingPhotoFile().then((f) => { if (f) processInvoiceFile(f); }).catch((e) => toast({ title: 'Não foi possível recuperar a foto', description: (e as Error).message, variant: 'destructive' })); };
-    run();
-    window.addEventListener('pending-invoice-photo', run);
-    return () => window.removeEventListener('pending-invoice-photo', run);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, card]);
+    void recoverPendingPhoto();
+    const onPending = () => void recoverPendingPhoto();
+    window.addEventListener('pending-invoice-photo', onPending);
+    return () => window.removeEventListener('pending-invoice-photo', onPending);
+  }, [loading, card, recoverPendingPhoto]);
 
   const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
-    await processInvoiceFile(file);
+    await processInvoiceImage(file);
   };
 
   const openCamera = async () => {
@@ -139,8 +226,8 @@ export default function BusinessCard() {
         return;
       }
       try {
-        const file = await capturePhotoFile();
-        if (file) await processInvoiceFile(file);
+        const capture = await captureInvoicePhoto();
+        if (capture) await processInvoiceImage(capture);
       } catch (err) {
         toast({
           title: 'Não foi possível abrir a câmara',
@@ -163,9 +250,11 @@ export default function BusinessCard() {
     }
     setSaving(true);
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) throw new Error('Sessão expirada. Faça login novamente.');
       const nome = (draft.fornecedor_id && fornNome[draft.fornecedor_id]) || draft.fornecedor_nome_lido || 'fornecedor';
       const { data: up, error: upErr } = await supabase.functions.invoke('upload-fatura-drive', {
-        body: { image: image.base64, mimeType: 'image/jpeg', date: draft.data_fatura, fileName: `${nome}_${draft.numero_fatura}_${draft.data_fatura}` },
+        body: { image: image.base64, mimeType: image.mimeType, date: draft.data_fatura, fileName: `${nome}_${draft.numero_fatura}_${draft.data_fatura}` },
       });
       if (upErr) throw new Error(await errText(upErr));
       const { error } = await db.from('business_card_faturas').insert({
@@ -179,7 +268,7 @@ export default function BusinessCard() {
       });
       if (error) throw new Error(error.code === '23505' ? 'Esta fatura já foi registada.' : error.message);
       toast({ title: 'Fatura registada', description: `Novo saldo: ${eur(saldo - valorNum)}` });
-      setDraft(null); setImage(null);
+      setDraft(null); setImage(null); setScanIssue(null);
       load();
     } catch (err) {
       toast({ title: 'Erro ao gravar', description: (err as Error).message, variant: 'destructive' });
@@ -228,6 +317,19 @@ export default function BusinessCard() {
         <Card>
           <CardHeader><CardTitle className="text-base">Confirmar dados da fatura</CardTitle></CardHeader>
           <CardContent className="space-y-3">
+            {scanIssue && (
+              <div role="alert" className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm space-y-2">
+                <div className="flex items-start gap-2 text-destructive font-medium">
+                  <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                  <span>Não foi possível ler os dados da fatura. {scanIssue.message}</span>
+                </div>
+                {scanIssue.detail && <p className="text-xs text-muted-foreground">{scanIssue.detail}</p>}
+                <p className="text-xs text-muted-foreground">Pode preencher os campos manualmente e gravar, ou tentar de novo.</p>
+                <Button size="sm" variant="outline" disabled={scanning || saving} onClick={() => { setDraft(null); setImage(null); setScanIssue(null); void openCamera(); }}>
+                  <Camera className="h-4 w-4 mr-1" />Tentar de novo
+                </Button>
+              </div>
+            )}
             {image && <img src={image.preview} alt="Fatura" className="w-full max-h-64 object-contain rounded-md border" />}
             <div className="space-y-1">
               <Label>Fornecedor</Label>
@@ -260,7 +362,7 @@ export default function BusinessCard() {
               {valorNum > saldo && <p className="text-destructive text-xs flex items-center gap-1"><AlertTriangle className="h-3 w-3" />O valor ultrapassa o saldo disponível.</p>}
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" className="flex-1" disabled={saving} onClick={() => { setDraft(null); setImage(null); }}>Cancelar</Button>
+              <Button variant="outline" className="flex-1" disabled={saving} onClick={() => { setDraft(null); setImage(null); setScanIssue(null); }}>Cancelar</Button>
               <Button className="flex-1" disabled={saving} onClick={save}>{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Gravar fatura'}</Button>
             </div>
           </CardContent>

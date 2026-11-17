@@ -33,7 +33,7 @@
     @android.webkit.JavascriptInterface <methods>;
 }
 
-# Plugins usados pelo app: App, Device, Geolocation, PushNotifications
+# Plugins usados pelo app: App, Camera, Device, Geolocation, PushNotifications
 -keep class com.capacitorjs.plugins.** { *; }
 
 # Cordova (bridge legado incluído pelo Capacitor)
