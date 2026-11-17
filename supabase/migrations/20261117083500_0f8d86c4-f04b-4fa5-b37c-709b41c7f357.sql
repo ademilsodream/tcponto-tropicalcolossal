@@ -1,0 +1,1 @@
+ALTER TABLE public.business_card_faturas ADD COLUMN IF NOT EXISTS location_id uuid NULL REFERENCES public.allowed_locations(id) ON DELETE SET NULL;

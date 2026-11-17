@@ -802,6 +802,7 @@ export type Database = {
           fornecedor_nif_lido: string | null
           fornecedor_nome_lido: string | null
           id: string
+          location_id: string | null
           numero_fatura: string
           updated_at: string
           valor: number
@@ -817,6 +818,7 @@ export type Database = {
           fornecedor_nif_lido?: string | null
           fornecedor_nome_lido?: string | null
           id?: string
+          location_id?: string | null
           numero_fatura: string
           updated_at?: string
           valor: number
@@ -832,6 +834,7 @@ export type Database = {
           fornecedor_nif_lido?: string | null
           fornecedor_nome_lido?: string | null
           id?: string
+          location_id?: string | null
           numero_fatura?: string
           updated_at?: string
           valor?: number
@@ -849,6 +852,13 @@ export type Database = {
             columns: ["fornecedor_id"]
             isOneToOne: false
             referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_card_faturas_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "allowed_locations"
             referencedColumns: ["id"]
           },
         ]
