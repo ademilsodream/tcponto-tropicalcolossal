@@ -23,6 +23,7 @@ const SalaryAdvanceRequest = lazy(() => import('@/components/SalaryAdvanceReques
 const EmployeeProfile = lazy(() => import('@/components/EmployeeProfile'));
 const EmployeeTools = lazy(() => import('@/components/EmployeeTools'));
 const MaterialRequests = lazy(() => import('@/components/MaterialRequests'));
+const BusinessCard = lazy(() => import('@/components/BusinessCard'));
 
 const RouteFallback = () => (
   <div className="flex items-center justify-center py-16">
@@ -120,6 +121,16 @@ function App() {
                     <ProtectedRoute>
                       <EmployeeLayout>
                         <MaterialRequests />
+                      </EmployeeLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/business-card"
+                  element={
+                    <ProtectedRoute>
+                      <EmployeeLayout>
+                        <BusinessCard />
                       </EmployeeLayout>
                     </ProtectedRoute>
                   }
