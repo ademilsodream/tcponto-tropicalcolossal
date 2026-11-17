@@ -62,10 +62,17 @@ Deno.serve(async (req) => {
     });
     let out: z.infer<typeof Fatura>;
     try {
-      for await (const _ of result.textStream) { /* consume */ }
-      out = await result.experimental_output;
+      let text = "";
+      for await (const chunk of result.textStream) text += chunk;
+      const m = text.match(/\{[\s\S]*\}/);
+      const p = Fatura.safeParse(m ? JSON.parse(m[0]) : null);
+      if (!p.success) {
+        console.error("scan-fatura unparsable output", text.slice(0, 500));
+        return json({ error: "Não foi possível ler a fatura. Tente outra foto." }, 422);
+      }
+      out = p.data;
     } catch (e) {
-      if (NoObjectGeneratedError.isInstance(e)) return json({ error: "Não foi possível ler a fatura. Tente outra foto." }, 422);
+      if (NoObjectGeneratedError.isInstance(e) || e instanceof SyntaxError) return json({ error: "Não foi possível ler a fatura. Tente outra foto." }, 422);
       throw e;
     }
 
