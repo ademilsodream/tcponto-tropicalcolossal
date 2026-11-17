@@ -1,0 +1,1 @@
+REVOKE ALL ON public.business_card_faturas FROM anon;
