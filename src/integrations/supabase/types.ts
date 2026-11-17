@@ -10,10 +10,101 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.1"
   }
   public: {
     Tables: {
+      ajuda_custo_calculos: {
+        Row: {
+          ano: number
+          created_at: string
+          dias: number | null
+          employee_id: string
+          ferias: number
+          id: string
+          irs: number
+          mes: number
+          natal: number
+          salario: number
+          sub_alimentacao: number
+          tcrh_valor: number | null
+          updated_at: string
+        }
+        Insert: {
+          ano: number
+          created_at?: string
+          dias?: number | null
+          employee_id: string
+          ferias?: number
+          id?: string
+          irs?: number
+          mes: number
+          natal?: number
+          salario?: number
+          sub_alimentacao?: number
+          tcrh_valor?: number | null
+          updated_at?: string
+        }
+        Update: {
+          ano?: number
+          created_at?: string
+          dias?: number | null
+          employee_id?: string
+          ferias?: number
+          id?: string
+          irs?: number
+          mes?: number
+          natal?: number
+          salario?: number
+          sub_alimentacao?: number
+          tcrh_valor?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ajuda_custo_calculos_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ajuda_custo_calculos_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_in_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "ajuda_custo_calculos_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_out_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "ajuda_custo_calculos_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_end_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "ajuda_custo_calculos_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_start_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "ajuda_custo_calculos_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_pontos_faltantes_semana"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       allowances: {
         Row: {
           amount: number
@@ -168,6 +259,54 @@ export type Database = {
           name?: string
           range_meters?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      alocacao_mensal: {
+        Row: {
+          department_id: string | null
+          employee_id: string
+          employee_name: string | null
+          hourly_value: number
+          hours: number
+          id: string
+          job_function_id: string | null
+          location_name: string
+          period_end: string
+          period_start: string
+          saved_at: string
+          saved_by: string | null
+          total: number
+        }
+        Insert: {
+          department_id?: string | null
+          employee_id: string
+          employee_name?: string | null
+          hourly_value?: number
+          hours?: number
+          id?: string
+          job_function_id?: string | null
+          location_name: string
+          period_end: string
+          period_start: string
+          saved_at?: string
+          saved_by?: string | null
+          total?: number
+        }
+        Update: {
+          department_id?: string | null
+          employee_id?: string
+          employee_name?: string | null
+          hourly_value?: number
+          hours?: number
+          id?: string
+          job_function_id?: string | null
+          location_name?: string
+          period_end?: string
+          period_start?: string
+          saved_at?: string
+          saved_by?: string | null
+          total?: number
         }
         Relationships: []
       }
@@ -510,6 +649,7 @@ export type Database = {
           auto_value: number
           created_at: string
           department_id: string
+          effective_from: string | null
           id: string
           is_active: boolean
           job_function_id: string
@@ -519,6 +659,7 @@ export type Database = {
           auto_value: number
           created_at?: string
           department_id: string
+          effective_from?: string | null
           id?: string
           is_active?: boolean
           job_function_id: string
@@ -528,6 +669,7 @@ export type Database = {
           auto_value?: number
           created_at?: string
           department_id?: string
+          effective_from?: string | null
           id?: string
           is_active?: boolean
           job_function_id?: string
@@ -549,6 +691,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      auto_obras_values_history: {
+        Row: {
+          auto_value: number
+          created_at: string
+          created_by: string | null
+          department_id: string
+          effective_from: string
+          id: string
+          job_function_id: string
+        }
+        Insert: {
+          auto_value: number
+          created_at?: string
+          created_by?: string | null
+          department_id: string
+          effective_from?: string
+          id?: string
+          job_function_id: string
+        }
+        Update: {
+          auto_value?: number
+          created_at?: string
+          created_by?: string | null
+          department_id?: string
+          effective_from?: string
+          id?: string
+          job_function_id?: string
+        }
+        Relationships: []
       }
       blocked_periods: {
         Row: {
@@ -579,6 +751,120 @@ export type Database = {
           start_date?: string
         }
         Relationships: []
+      }
+      business_card_credits: {
+        Row: {
+          amount: number
+          card_id: string
+          created_at: string
+          credit_date: string
+          id: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          card_id: string
+          created_at?: string
+          credit_date: string
+          id?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          card_id?: string
+          created_at?: string
+          credit_date?: string
+          id?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_card_credits_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "business_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_cards: {
+        Row: {
+          card_code: string | null
+          card_number: string
+          created_at: string
+          employee_id: string
+          id: string
+          is_active: boolean
+          reference_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          card_code?: string | null
+          card_number: string
+          created_at?: string
+          employee_id: string
+          id?: string
+          is_active?: boolean
+          reference_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          card_code?: string | null
+          card_number?: string
+          created_at?: string
+          employee_id?: string
+          id?: string
+          is_active?: boolean
+          reference_number?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_cards_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_cards_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_in_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "business_cards_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_clock_out_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "business_cards_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_end_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "business_cards_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_falta_lunch_start_hoje"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "business_cards_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "vw_pontos_faltantes_semana"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       catalogo_itens_orcamento: {
         Row: {
@@ -1897,6 +2183,7 @@ export type Database = {
           change_reason: string | null
           created_at: string
           created_by: string | null
+          department_id: string | null
           effective_date: string
           employee_id: string
           id: string
@@ -1907,6 +2194,7 @@ export type Database = {
           change_reason?: string | null
           created_at?: string
           created_by?: string | null
+          department_id?: string | null
           effective_date?: string
           employee_id: string
           id?: string
@@ -1917,6 +2205,7 @@ export type Database = {
           change_reason?: string | null
           created_at?: string
           created_by?: string | null
+          department_id?: string | null
           effective_date?: string
           employee_id?: string
           id?: string
@@ -2107,6 +2396,7 @@ export type Database = {
           data_emissao: string
           data_vencimento: string
           descricao: string | null
+          despesa_vinculada_id: string | null
           id: string
           numero_fatura: string
           obra_id: string | null
@@ -2123,6 +2413,7 @@ export type Database = {
           data_emissao?: string
           data_vencimento: string
           descricao?: string | null
+          despesa_vinculada_id?: string | null
           id?: string
           numero_fatura: string
           obra_id?: string | null
@@ -2139,6 +2430,7 @@ export type Database = {
           data_emissao?: string
           data_vencimento?: string
           descricao?: string | null
+          despesa_vinculada_id?: string | null
           id?: string
           numero_fatura?: string
           obra_id?: string | null
@@ -2155,6 +2447,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "faturas_receita_despesa_vinculada_id_fkey"
+            columns: ["despesa_vinculada_id"]
+            isOneToOne: false
+            referencedRelation: "despesas"
             referencedColumns: ["id"]
           },
           {
@@ -3157,33 +3456,52 @@ export type Database = {
       }
       obras_despesas_manuais: {
         Row: {
+          arquivo_anexo: string | null
+          atcud: string | null
           created_at: string
           data: string
           descricao: string
+          fornecedor_id: string | null
           id: string
+          numero_fatura: string | null
           obra_id: string
           updated_at: string
           valor: number
         }
         Insert: {
+          arquivo_anexo?: string | null
+          atcud?: string | null
           created_at?: string
           data: string
           descricao: string
+          fornecedor_id?: string | null
           id?: string
+          numero_fatura?: string | null
           obra_id: string
           updated_at?: string
           valor: number
         }
         Update: {
+          arquivo_anexo?: string | null
+          atcud?: string | null
           created_at?: string
           data?: string
           descricao?: string
+          fornecedor_id?: string | null
           id?: string
+          numero_fatura?: string | null
           obra_id?: string
           updated_at?: string
           valor?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "obras_despesas_manuais_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "obras_despesas_manuais_obra_id_fkey"
             columns: ["obra_id"]
@@ -4442,6 +4760,9 @@ export type Database = {
           hourly_rate: number | null
           id: string
           irs_deduction: number | null
+          km_allowance: number
+          km_quantity: number
+          km_unit_value: number
           meal_allowance: number | null
           meal_allowance_days: number | null
           meal_allowance_unit_value: number | null
@@ -4457,6 +4778,7 @@ export type Database = {
           social_security: number | null
           total_allowances: number | null
           total_deductions: number | null
+          travel_allowance: number
           updated_at: string | null
           weekly_hours: number | null
         }
@@ -4471,6 +4793,9 @@ export type Database = {
           hourly_rate?: number | null
           id?: string
           irs_deduction?: number | null
+          km_allowance?: number
+          km_quantity?: number
+          km_unit_value?: number
           meal_allowance?: number | null
           meal_allowance_days?: number | null
           meal_allowance_unit_value?: number | null
@@ -4486,6 +4811,7 @@ export type Database = {
           social_security?: number | null
           total_allowances?: number | null
           total_deductions?: number | null
+          travel_allowance?: number
           updated_at?: string | null
           weekly_hours?: number | null
         }
@@ -4500,6 +4826,9 @@ export type Database = {
           hourly_rate?: number | null
           id?: string
           irs_deduction?: number | null
+          km_allowance?: number
+          km_quantity?: number
+          km_unit_value?: number
           meal_allowance?: number | null
           meal_allowance_days?: number | null
           meal_allowance_unit_value?: number | null
@@ -4515,6 +4844,7 @@ export type Database = {
           social_security?: number | null
           total_allowances?: number | null
           total_deductions?: number | null
+          travel_allowance?: number
           updated_at?: string | null
           weekly_hours?: number | null
         }
@@ -4676,6 +5006,7 @@ export type Database = {
         Row: {
           address: string | null
           admission_date: string | null
+          allowed_menus: string[] | null
           atividade_aberta: boolean
           birth_date: string | null
           cae_code: string | null
@@ -4726,6 +5057,7 @@ export type Database = {
         Insert: {
           address?: string | null
           admission_date?: string | null
+          allowed_menus?: string[] | null
           atividade_aberta?: boolean
           birth_date?: string | null
           cae_code?: string | null
@@ -4776,6 +5108,7 @@ export type Database = {
         Update: {
           address?: string | null
           admission_date?: string | null
+          allowed_menus?: string[] | null
           atividade_aberta?: boolean
           birth_date?: string | null
           cae_code?: string | null
