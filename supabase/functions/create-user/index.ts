@@ -12,6 +12,23 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
+  // SECURITY: exigir sessão válida de administrador
+  {
+    const authHeader = req.headers.get('Authorization') ?? ''
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : ''
+    const deny = (error: string, status: number) =>
+      new Response(JSON.stringify({ error }), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    if (!token) return deny('Não autenticado', 401)
+    const admin = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '')
+    const { data: u, error: ue } = await admin.auth.getUser(token)
+    if (ue || !u?.user) return deny('Sessão inválida', 401)
+    const { data: roles } = await admin.from('user_roles').select('role').eq('user_id', u.user.id)
+    const { data: prof } = await admin.from('profiles').select('role').eq('id', u.user.id).maybeSingle()
+    const isAdmin = (roles ?? []).some((r: { role: string }) => r.role === 'admin' || r.role === 'super_admin')
+      || prof?.role === 'admin' || prof?.role === 'super_admin'
+    if (!isAdmin) return deny('Apenas administradores podem criar funcionários', 403)
+  }
+
   try {
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
