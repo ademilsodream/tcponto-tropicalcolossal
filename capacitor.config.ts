@@ -7,9 +7,9 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   server: {
     androidScheme: 'https',
+    // SECURITY: a app só navega para o Supabase (o domínio de preview do Lovable foi removido)
     allowNavigation: [
-      'https://cyapqtyrefkdemhxryvs.supabase.co',
-      'https://dc666f76-3293-4845-8214-7797aed7f618.lovableproject.com'
+      'https://cyapqtyrefkdemhxryvs.supabase.co'
     ]
   },
   plugins: {
