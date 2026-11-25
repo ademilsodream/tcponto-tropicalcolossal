@@ -85,13 +85,8 @@ export function useEmployeeTools(employeeId: string | undefined | null) {
   const fetchEmployees = useCallback(async () => {
     if (!employeeId) return;
 
-    const { data, error: fetchError } = await supabase
-      .from('profiles')
-      .select('id, name, employee_code')
-      .eq('role', 'user')
-      .eq('status', 'active')
-      .neq('id', employeeId)
-      .order('name');
+    // SECURITY: função do banco que devolve só id, nome e código (sem NIF/NISS/IBAN/salário)
+    const { data, error: fetchError } = await (supabase.rpc as any)('listar_colegas_ativos');
 
     if (fetchError) {
       console.error('Erro ao buscar funcionários:', fetchError);
